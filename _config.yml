@@ -11,24 +11,22 @@ url: http://yizhang82.github.io
 
 # Harmony theme configuration. Please change accordingly.
 harmony:
-  name: Harmony
+  name: yizhang82's blog
   # Little description about your site
-  description: Harmony is free responsive jekyll theme.
+  description: Runtime, Compilers, Languages, and other random stuff
   # 'meta_description:' Write an awesome description for your new site here.
   # It will appear in your document head meta (for Google search results) and 
   # in your feed.xml site description.
   meta_description: > # 
-   Harmony is a free responsive jekyll theme by Gayan Virajith
-   and Maheshika Lakmali. Sourced on Github - 
-   https://github.com/gayanvirajith/harmony
+   yizhang82's blog
   basetheme: theme-base-01 # pre defined thmes are darken, blue-water, redish.
   author: # Author details
-    name: Gayan Virajith
-    email: gayanvirajith@gmail.com
-    url: http://gayanvirajith.github.io
+    name: Yi Zhang
+    email: 
+    url: http://yizhang82.github.io
 
   # Google Analytics key, leave blank to ignore
-  google_analytics_key: UA-xxxx-x
+  google_analytics_key: UA-93224322-1
 
   # Profile links, leave blank to ignore
   social: 
@@ -43,8 +41,9 @@ harmony:
 
 # Conversion / Build settings 
 markdown:    kramdown
-# This is how you put pygments config in jekyll 2.0 instead of pygments: true
-highlighter: rouge
+kramdown:
+      input: GFM
+      syntax_highlighter: rouge
 
 # Permalinks
 permalink:        pretty
