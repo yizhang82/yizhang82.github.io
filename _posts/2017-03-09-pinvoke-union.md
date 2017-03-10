@@ -1,9 +1,20 @@
+---
+layout: post
+title:  "P/invoke with unions in C#"
+date:   2017-03-09
+categories:
+- C#
+- interop
+permalink: pinvoke-union
+comments: true
+description: Talks about things to watch out for when using unions in C#
+---
 
 When interop with native code using C# p/invokes, some time you need to create unions in C#. They are represented by structs with `[StructLayout(LayoutKind.Explicit)]` attribute and the fields annotated with `[FieldOffset(0)]` specifying their offset. It looks pretty straight-forward, but in practice this can be very deceiving. In this article, I'll talk about two important rules when using unions. 
 
 # No overlapping fields of reference fields and value type fields
 
-```C#
+```csharp
 [StructLayout(LayoutKind.Explicit)]
 struct Foo
 {
@@ -31,7 +42,7 @@ Unhandled Exception: System.TypeLoadException: Could not load type 'Foo' from as
 
 A slight variant of this is overlapping fields:
 
-```C#
+```csharp
 [StructLayout(LayoutKind.Explicit)]
 struct Foo
 {
@@ -53,7 +64,7 @@ First let me clarify what blittable means - it means the native and managed repr
 
 Let's look at this example:
 
-```C#
+```csharp
 using System;
 using System.Runtime.InteropServices;
 
@@ -98,7 +109,7 @@ yizhang@yzha-mbp:~/var/union$ dotnet run
 
 Now reverse the two fields:
 
-```
+```csharp
 [StructLayout(LayoutKind.Explicit)]
 struct Foo2
 {

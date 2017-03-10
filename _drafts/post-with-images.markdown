@@ -5,6 +5,7 @@ date:   2014-08-30 23:56:45
 categories:
 - blog
 permalink: sample-post-with-images
+comments:true
 description: A sample post to show how images are being rendered on harmony.
 ---
 
