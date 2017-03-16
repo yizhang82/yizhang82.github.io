@@ -1,4 +1,14 @@
-# Why am I writing this article?
+---
+layout: post
+title:  "Windows Runtime is not a Runtime"
+date:   2017-03-15
+categories:
+- winrt
+- interop
+permalink: what-is-winrt
+comments: true
+description: Clarifies what is Windows Runtime and why it is not a Runtime
+---   
 
 I've spent a non-trival part of my career adding Windows Runtime support to .NET framework and .NET native, and I often get people asking me what is Windows Runtime and there is a lot of confusion around it. The bad naming certainly doesn't help in this case. I'm going to write a series blog post so that I can point people to. :)
 
