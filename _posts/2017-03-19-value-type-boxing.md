@@ -80,7 +80,7 @@ mov     edx,0Ah
 call    00007ff8`cfa700e0
 ```
 
-Note that I'm showing x64 assembly code, which is much easier to understand. The first 4 arguments are always passed in register `rcx`, `edx`, `r8`, `r9` (rest is passed through stack), and return value is returned in `rax`. All these are 64-bit wide registers. In the code above, JIT is passing the 'this' pointer in rcx (pointing to portion of the stack starting at `rbp-18h`, and the integer 10 (0x0a) in `rdx/edx` (`edx` is simply the lower 32-bit portion of `rax`). 
+Note that I'm showing x64 assembly code, which is much easier to understand. The first 4 arguments are always passed in register `rcx`, `edx`, `r8`, `r9` (rest is passed through stack), and return value is returned in `rax`. All these are 64-bit wide registers. In the code above, JIT is passing the 'this' pointer in rcx (pointing to portion of the stack starting at `rbp-18h`, and the integer 10 (0x0a) in `rdx/edx` (`edx` is simply the lower 32-bit portion of `rdx`). 
 
 Now if you look at the actual code Foo.AddValue:
 
