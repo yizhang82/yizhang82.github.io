@@ -31,12 +31,12 @@ First, let's take a look at what it doesn't do. Let's say you have the following
     }
 ```
 
-When you have two instantiations over value types such as `int` and `float`, .NET doesn't share the method body between the two instantiations, because - you guessed it - because they are value types. If you think about how a compiler emits code, you'll see why it can be quite challenging if you want to share the code:
-* To state the obvious, `int` and `float` has different sizes. So a compiler can't simply assign a register or allocate a fixed portion of the stack to hold the value, or make the copy
-* Depending on the platform, `int` and `float` can be passed in different registers / stack. Compiler doesn't even know where T is when the call has been made. 
+When you have two instantiations over value types such as `int` and `double`, .NET doesn't share the method body between the two instantiations, because - you guessed it - because they are value types. If you think about how a compiler emits code, you'll see why it can be quite challenging if you want to share the code:
+* `int` and `double` has different sizes - 4 and 8 bytes. So a compiler can't simply assign a register or allocate a fixed portion of the stack to hold the value, or make the copy. 
+* Depending on the platform, `int` and `double` can be passed in different registers / stack. Compiler doesn't even know where T is when the call has been made. 
 * compiler also needs to know where the object fields are in order to track the GC fields. This is obviously not a problem with primitive types, but can become an issue if you are dealing with structs with reference type fields. Without knowing what T is, it doesn't know where the reference type fields are, and it won't be able to mark the fields (See [.NET Garbage Collector Fundamentals](https://msdn.microsoft.com/en-us/library/ee787088(v=vs.110).aspx) for more details. 
 
-To further illustrate my point, this is the assignment in the int version:
+To further illustrate my point, this is the assignment in the `int` version:
 
 ```
 00007FFD73760BAC  mov         rax,qword ptr [rbp+50h]  
@@ -44,12 +44,12 @@ To further illustrate my point, this is the assignment in the int version:
 00007FFD73760BB3  mov         dword ptr [rax],edx
 ```
 
-And this is the assignment in the float version:
+And this is the assignment in the `double` version:
 
 ```
-00007FFD73760C0F  mov         rax,qword ptr [rbp+50h]  
-00007FFD73760C13  vmovss      xmm0,dword ptr [rbp+58h]  
-00007FFD73760C19  vmovss      dword ptr [rax],xmm0 
+00007FFD34160C1F  mov         rax,qword ptr [rbp+50h]  
+00007FFD34160C23  vmovsd      xmm0,qword ptr [rbp+58h]  
+00007FFD34160C29  vmovsd      qword ptr [rax+8],xmm0 
 ```
 
 Of course, challenging doesn't mean it's impossible. In theory, you could pass those value types as boxed value type, and therefore passing it by-reference. Or change the callsite convention to pass the type along with the struct (and always pass struct by reference). With a bit more code, you could in theory have a version that allocates the right amount of buffer, copy the right size, and know where the fields are (because boxed value types are reference types and the first pointer size field is the type, and from type you can get the fields) when given the right information. However, this would significantly reduce performance with value types, which is why it's not being done today in CLR (.NET Framework) and CoreCLR (.NET Core). However, .NET Native today does support some form of generic sharing for value types under limited cirumstances, but that's out of the scope of our discussion today.
