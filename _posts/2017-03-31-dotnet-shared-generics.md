@@ -137,11 +137,9 @@ There are other interesting scenarios such as calling a generic virtual method. 
 
 ## What's next
 
-In this post I only touched the basics - how .NET generics is able to achieve code sharing between different reference type instantiations. Of course, it doesn't really stop here - sharing code brings its own set of challenges. One such interesting challenge is: 
+In this post I only touched the basics - how .NET generics is able to achieve code sharing between different reference type instantiations. Of course, it doesn't really stop here - sharing code brings its own set of challenges. One such interesting challenge is: How do you know what `T` is? What is the magic that enables retriving the value of typeof(T)? 
 
-* How do you know what `T` is? What is the magic that enables retriving the value of typeof(T)? 
-
-THis is something I'll talk about in my next post. 
+This is something I'll talk about in my next post. 
 
 Thanks for reading!
 
