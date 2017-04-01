@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Sharing .NET generic code under the hood"
-date:   2017-03-19
+date:   2017-03-31
 categories:
 - C#
 - CLR
