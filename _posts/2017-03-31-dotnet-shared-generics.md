@@ -86,13 +86,13 @@ Now, you might ask, what about method calls inside the method body? Are they rea
 
 This is actually an really interesting question. Let's look at a few different cases:
 
-1. You are making an non-virtual instance method call or even better, a static method call,  n specific class or a `T` constrained over a class
+### 1. You are making an non-virtual instance method call or even better, a static method call,  n specific class or a `T` constrained over a class
 
 This is the easier case. Obviously this can only be achieved through class constraints by having T constraining over a class. Any competent JIT implementation will see right through your intention and happily put a direct call to the right method (or even inline it, if it is in a good mood). This is perfect for code sharing. 
 
 (BTW, a direct call in this case is actually a lie. The call would actually jmp to another code that either does the JITting or the real code. But that's a topic for another post)
 
-2. You are making an interface call such as IFoo
+### 2. You are making an interface call such as IFoo
 
 In .NET code, an interface cast is achieved through a helper call into the CLR called `JIT_ChkCastInterface` - which simply does a check (it doesn't change the value of 'this' pointer, unlike C++). The actual interface call is made through a special piece of code called virtual dispatch stub and gets passed in some additional secret argument telling the stub what exactly the interface method is, and the stub will happily find the right method to call. 
 
@@ -107,7 +107,7 @@ In .NET code, an interface cast is achieved through a helper call into the CLR c
 
 Note that there are also cases where JIT can figure out which method it is at JIT time if T is a value type. But that's not really an interesting case for code sharing since it is specifically for that value type instantiation.  
 
-3. You are making an virtual method call on specific class or a `T` constrained over a base class
+### 3. You are making an virtual method call on specific class or a `T` constrained over a base class
 
 In .NET, virtual functions are dispatched through v-table. This is perhaps not at all surprising if you are a C++ programmer. JIT spits out the following code for a virtual call:
 
@@ -131,7 +131,7 @@ As you can see, this is not that different from C++ virtual function call.
 
 Given that you are either calling a virtual function on `T` that is constrained over a particular class, or on a specific class, the v-table layout is going to be compatible between T and T's derived classes, and therefore they will have the same magic offset 0x48, and therefore needs the same code, allowing code sharing.
 
-4. Other calls
+### 4. Other calls
 
 There are other interesting scenarios such as calling a generic virtual method. Those scenarios may involve further sharing - the generic virtual method body could be shared themselves. This requires additional runtime magic that I'm not going to cover in this post.  
 
