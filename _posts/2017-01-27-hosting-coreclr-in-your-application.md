@@ -1,8 +1,9 @@
 ---
 layout: post
-title:  "Hosting CoreCLR in your C/C++ application"
+title:  "Embedding CoreCLR in your C/C++ application"
 date:   2017-01-27
 description: Hosting CoreCLR in your C/C++ application
+permalink: hosting-coreclr
 comments: true
 categories:
 - clr
@@ -11,7 +12,7 @@ categories:
 ---  
 CoreCLR is the runtime that runs your .NET Core application, just like the 'classic' .NET in your machine, except it's much smaller and requires no installation. This makes it ideal for embedding .NET code as part of your application without additional dependency, and you completely are in control of the version of CoreCLR that you are running. 
 
-In order to include CoreCLR in your application, you need to "host" CoreCLR by loading and initializing the runtime instance, and start running code. CoreCLR exposes such functionality through C APIs defined in [coreclrhost.h](https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/inc/coreclrhost.h). This post shows you how to do that. 
+In order to include CoreCLR in your application, you need to "embed" (in CoreCLR terms, this is called hosting) CoreCLR by loading and initializing the runtime instance, and start running code. CoreCLR exposes such functionality through C APIs defined in [coreclrhost.h](https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/inc/coreclrhost.h). This post shows you how to do that. 
 
 The discussion below applies to MacOS, but equally applies to Windows/Linux as well. 
 

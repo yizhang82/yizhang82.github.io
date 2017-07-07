@@ -3,6 +3,7 @@ layout: post
 title:  "Calling C functions from GO"
 date:   2017-01-03
 description: How to call C functions from GO 
+permalink: calling-c-from-go
 comments: true
 categories:
 - go
