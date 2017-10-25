@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Wrapping async sqlite operation as promise"
+title:  "Calling node.js sqlite callback function using promise and await "
 date:   2017-10-24
 categories:
 - javascript
@@ -8,12 +8,12 @@ categories:
 - await
 permalink: async-sqlite-as-promise
 comments: true
-description: How to wrap async API as javascript promise
+description: A gentle introduction to promise + async/await model and how to wrap existing callback code to the new model
 ---  
 
-I was experimenting with [sqlite package](https://github.com/mapbox/node-sqlite3) with node.js the other day and let's just say the async programming style is rather painful.
+I was experimenting with [sqlite package](https://github.com/mapbox/node-sqlite3) with node.js the other day and the async programming style is rather painful, so I did some experiment to wrap it with promise + async/await to make it easier to use. This post shows you how to do that. 
 
-Let's say I'm working with a database with a `Voters` table that has two fields - Name and Count. 
+For example, let's say I'm working with a database with a `Voters` table that has two fields - `Name` and `Count`. 
 
 ```js
 var sqlite = require('sqlite3').verbose();
@@ -194,6 +194,11 @@ Again, this is slightly more code due to the try/catch and function goo (javascr
 ## Conclusion
 
 Javascript promise and async/await is reasonably straight-forward abstraction for async programming once you get used to the model. Wrapping an "classic" callback model API with promise then calling it with async/await greatly simplifies your client code. 
+
+For your reference, I'm put 3 versions of javascript code that runs (provided that you created a npm and added sqlite package):
+1. [Callback version](https://gist.github.com/yizhang82/e0cf283340860710cdc7ed54131d200a)
+2. [Promise version](https://gist.github.com/yizhang82/2ab802f1439490984eb998af3d96b16b)
+3. [Await version](https://gist.github.com/yizhang82/26101c92faeea19568e48224b09e2d1c)
 
 BTW, in the upcoming C++ coroutine series, I'll be talking about how to wrap C async API with C++ coroutines, which are much more involved but would greatly help understand async/await model in a much deeper level. 
 
