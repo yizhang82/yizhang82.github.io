@@ -11,6 +11,8 @@ comments: true
 description: A gentle introduction to promise + async/await model and how to wrap existing callback code to the new model
 ---  
 
+## Callback pain
+
 I was experimenting with [sqlite package](https://github.com/mapbox/node-sqlite3) with node.js the other day and the async programming style is rather painful, so I did some experiment to wrap it with promise + async/await to make it easier to use. This post shows you how to do that. 
 
 For example, let's say I'm working with a database with a `Voters` table that has two fields - `Name` and `Count`. 
