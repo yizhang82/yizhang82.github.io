@@ -10,8 +10,6 @@ categories:
 - emulator
 --- 
 
-# Writing your own NES Emulator - Overview
-
 I've recently wrote a [NES](https://en.wikipedia.org/wiki/Nintendo_Entertainment_System) Emulator [NesChan](https://github.com/yizhang82/neschan) just for fun. I'd like to document my experience / learning in a series of posts. This is the first one. 
 
 ![NESChan mac version](/assets/images/neschan_mac.PNG)
