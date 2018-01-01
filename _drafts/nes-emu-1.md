@@ -1,82 +1,18 @@
-# Writing your own NES Emulator - Overview
-
-
-* 8-bit 6502 CPU with 4 registers, and 16-bit addressable memory.
-* PPU (Picture Processing Unit) supporting 8x8 tiles for background, 8x8 or 8x16 sprites for moving objects. 
-* APU (Audio Processing Unit) supporting 2 pulse channel, 1 triangle channel, 1 noise channel, and 1 DMC channel
-* Controllers
-* Mappers
-
-## My advice
-
-* Know your hardware - read the wiki repeatedly until you have a mental picture of the hardware. 
-* Start from the CPU, and make sure it's solid
-
-* Test-driven
-
-## Which language to pick
-
-It probably doesn't matter. People have written NES emulators using all kinds of languages - C/C++, JavaScript, Go, C#, etc. Just pick your favorite language and go.
-
-## Have a plan
-
-* Start from CPU first. And make sure it's really solid.
-
-Duh. You can't do anything without CPU. Just go implement the instructions - stick to the official ones.
-
-* Add NES rom support (and mapper 0) 
-
-Why add ROM support before you can actually render anything to screen? You want to use [test roms](http://wiki.nesdev.com/w/index.php/Emulator_tests) to make sure your CPU simulation is *really* good and squash bugs as early as possible. This will save you a ton of time. Trust me - you don't want to find your CPU bugs in real games. And you'll als catch your own regressions. Many ROMs would automatically write a success/fail code at a well known location - this can be your check/asserts, depending on what test framework you use.
-
-And eventually you'd want to load some games, right? :)
-
-* Then go implement your PPU. Focus on the basic rendering pipeline.
-
-This is probably going to be fairly involved if not challenging. Even for experienced programmers, the PPU rendering pipeline takes quite a bit of time to wrap one's head around. The various concepts around rendering tiles/sprites takes a bit getting used too (bitplanes, for example), and implementing the precise rendering pipeline has a lot of details. 
-
-Don't worry about rendering to screen yet. Just observe your VRAM and see with your inner eye to imagine. 
-
-Don't add scroll. That should be the next step.
-
-* Go try some simple games that don't scroll and use mapper 0. Donkey Kong/Popeye/balloon fight are solid choices.
-
-* Add scrolling 
-
-Scrolling is tricky because you need to locate the exact pixel within 8x8 tile, and you'll also render one more tile if the X scroll isn't a factor of 8. The various interaction between PPU register and scroll parameters also need some time to get exactly right.
-
-* Now test your game with 
-
-* Add APU support
-
-I haven't finished this one personally. Will update once I got it working. To get this to work you need to understand square waves, triangle waves, etc. 
-
-* Add more mappers (MMC1, MMC3, etc)
-
-More mappers = more games.
-
-## Debugging
-
-
-
-## Make sure you have good tests
-
-
-
 # Writing your own NES emulator - emulation strategy
 
-## Emulation Strategy
+# Emulation Strategy
 
-### Hardware simulation
+## Hardware simulation
 
 In theory, one can build a simulator that exactly replicates the hardware behavior on transistor level. For example, [visual6502.org](http://visual6502.org/) has [javascript based simulation](https://github.com/trebonian/visual6502) that simulates 6502 CPU in this manner. One can imagine once you have the entire hardware mapped out to transistors as a table, the entire simulation can be completely table driven. However, it is probably not too hard to imagine such approach might not have desirable performance. And writing such code and debugging such tables is going to be extremely hard. Just imagine - you are no longer debugging code, but actually debugging your table to find the 'missing/incorrect wire', making this impractical for most emulation authors, other than the electronic hacker/software engineer wizard. Such people are rare these days (I'm certainly not one of them).
 
-### Software simulation
+## Software simulation
 
 Not surprisingly, this approach replicates hardware behavior that is observable to software, and doesn't care what the hardware does. Of course, it still need to replicate hardware behavior accurate enough, in order to run as many programs as possible.
 
 The trickiest part is *timing*. 
 
-#### Timing is everything
+### Timing is everything
 
 Hardware are naturally parallelized - CPU, APU, PPU, etc all of them runs in parallel and communicate to each other in real time. They run at their own pace. If such pacing are not emulated, programs might not work correctly, when they expect certain order of events when running in real hardware. 
 
