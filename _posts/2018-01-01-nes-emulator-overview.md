@@ -79,7 +79,7 @@ And eventually you'd want to load some games, right? :)
 
 If you find that some test ROM need unofficial instructions, add them as needed. 
 
-### 3. Then go implement your PPU. Focus on the basic rendering pipeline.
+### 3. Then go implement your PPU. 
 
 This is probably going to be fairly involved if not challenging. Even for experienced programmers, the PPU rendering pipeline takes quite a bit of time to wrap one's head around. Due to memory constraints, the rendering tiles/sprites is completely 8x8 tile (block) based, and the way those tiles are represented in memory takes a bit getting used too (bitplanes, etc), and implementing the precise rendering pipeline has a lot of details. 
 
@@ -89,15 +89,21 @@ Don't add scroll. That should be the next step.
 
 Now you can add the rendering and the main game loop. Make sure your game loop process as the exact cycle as the real hardware by doing some math over elapsed tick count and CPU MHZ.
 
-### 4. Go try some simple games that don't scroll and use mapper 0. Donkey Kong/Popeye/balloon fight are solid choices.
+### 4. Go try some simple games
+
+Try some games that don't scroll and use mapper 0. Donkey Kong/Popeye/balloon fight are solid choices. You want to focus on those simple ones before you attempt your favorite games.
 
 ### 5. Add scrolling 
 
 Scrolling is tricky because you need to locate the exact pixel within 8x8 tile, and you'll also render one more tile if the X scroll isn't a factor of 8. Go read the [scrolling doc](http://wiki.nesdev.com/w/index.php/PPU_scrolling) and make sure all the interaction between PPU register, PPUADDR and scrolling parameters are done exactly right.
 
-### 6. Now test a game with mapper 0 and scrolling. Ice Climber is a great choice. 
+### 6. Test a scrolling game 
 
-### 7. Once quite a few simple mapper 0 game work great, now it's time to take your emulator to a real test. Try out Super Mario Bros.
+Ice Climber is a great choice for Y scroll. Horizontal scrolling games are trickier and should be tested in step 7.   
+
+### 7. Try out Super Mario Bros.
+
+Once quite a few simple mapper 0 game work great, now it's time to take your emulator to a real test. Super Mario Bros isn't particularly tricky, but is quite demanding that your emulator should have a fairly complete CPU and PPU emulation with reasonable accuracy. 
 
 ### 8. Add APU support
 
@@ -105,11 +111,15 @@ I haven't finished this one personally. Will update once I got it working. To ge
 
 ### 9. Add more mappers (MMC1, MMC3, etc)
 
-More mappers = more games.
+More mappers = more games. In general the first few mappers are great candidates as it is supported by most games.
 
-### 10. Try a real tricky game to emulate - such as Battletoads.
+### 10. Try a real tricky game to emulate
 
-### 11. At this point, you should have many games working. Now you can decide what matter most to your emulator - there are a lot of things you can do now
+Battletoads, if you are up for a challenge. Or there are [more](http://wiki.nesdev.com/w/index.php/Tricky-to-emulate_games) to choose from.
+
+### 11. Add fancy features
+
+At this point, you should have many games working. Now you can decide what matter most to your emulator - there are a lot of things you can do now:
 
   * Add a debugger support
   * Add load/save state
