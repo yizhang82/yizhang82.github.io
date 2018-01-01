@@ -65,11 +65,11 @@ Before you actually go write the emulator, it'll be good to have a plan of attac
 
 This is the plan I went with.
 
-1. Start from CPU first. And make sure it's really solid.
+### 1. Start from CPU first. And make sure it's really solid.
 
 Duh. You can't do anything without CPU. Just go implement the instructions and the main loop - stick to the official instructions first. There are very few games use unofficial/undocumented instructions.
 
-2. Add NES rom support (and mapper 0) 
+### 2. Add NES rom support (and mapper 0) 
 
 Why add ROM support before you can actually render anything to screen? You want to use [test roms](http://wiki.nesdev.com/w/index.php/Emulator_tests) to make sure your CPU simulation is *really* good and squash bugs as early as possible. This will save you a ton of time. 
 
@@ -79,9 +79,9 @@ And eventually you'd want to load some games, right? :)
 
 If you find that some test ROM need unofficial instructions, add them as needed. 
 
-3. Then go implement your PPU. Focus on the basic rendering pipeline.
+### 3. Then go implement your PPU. Focus on the basic rendering pipeline.
 
- This is probably going to be fairly involved if not challenging. Even for experienced programmers, the PPU rendering pipeline takes quite a bit of time to wrap one's head around. Due to memory constraints, the rendering tiles/sprites is completely 8x8 tile (block) based, and the way those tiles are represented in memory takes a bit getting used too (bitplanes, etc), and implementing the precise rendering pipeline has a lot of details. 
+This is probably going to be fairly involved if not challenging. Even for experienced programmers, the PPU rendering pipeline takes quite a bit of time to wrap one's head around. Due to memory constraints, the rendering tiles/sprites is completely 8x8 tile (block) based, and the way those tiles are represented in memory takes a bit getting used too (bitplanes, etc), and implementing the precise rendering pipeline has a lot of details. 
 
 Don't worry about rendering to screen yet. Just observe your VRAM and see with your inner eye to imagine. 
 
@@ -89,27 +89,27 @@ Don't add scroll. That should be the next step.
 
 Now you can add the rendering and the main game loop. Make sure your game loop process as the exact cycle as the real hardware by doing some math over elapsed tick count and CPU MHZ.
 
-4. Go try some simple games that don't scroll and use mapper 0. Donkey Kong/Popeye/balloon fight are solid choices.
+### 4. Go try some simple games that don't scroll and use mapper 0. Donkey Kong/Popeye/balloon fight are solid choices.
 
-5. Add scrolling 
+### 5. Add scrolling 
 
 Scrolling is tricky because you need to locate the exact pixel within 8x8 tile, and you'll also render one more tile if the X scroll isn't a factor of 8. Go read the [scrolling doc](http://wiki.nesdev.com/w/index.php/PPU_scrolling) and make sure all the interaction between PPU register, PPUADDR and scrolling parameters are done exactly right.
 
-6. Now test a game with mapper 0 and scrolling. Ice Climber is a great choice. 
+### 6. Now test a game with mapper 0 and scrolling. Ice Climber is a great choice. 
 
-7. Once quite a few simple mapper 0 game work great, now it's time to take your emulator to a real test. Try out Super Mario Bros.
+### 7. Once quite a few simple mapper 0 game work great, now it's time to take your emulator to a real test. Try out Super Mario Bros.
 
-8. Add APU support
+### 8. Add APU support
 
 I haven't finished this one personally. Will update once I got it working. To get this to work you need to understand square waves, triangle waves, etc. Audio programming was black magic to me but I'm starting to get it.
 
-9. Add more mappers (MMC1, MMC3, etc)
+### 9. Add more mappers (MMC1, MMC3, etc)
 
 More mappers = more games.
 
-10. Try a real tricky game to emulate - such as Battletoads.
+### 10. Try a real tricky game to emulate - such as Battletoads.
 
-11. At this point, you should have many games working. Now you can decide what matter most to your emulator - there are a lot of things you can do now
+### 11. At this point, you should have many games working. Now you can decide what matter most to your emulator - there are a lot of things you can do now
 
   * Add a debugger support
   * Add load/save state
