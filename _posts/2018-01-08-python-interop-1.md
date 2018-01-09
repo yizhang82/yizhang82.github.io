@@ -281,7 +281,7 @@ The correct way is to assign it on the VECTOR object returned from `contents` at
 3 5 7
 ```
 
-The reason this works is that the VECTOR object points directly to the Vector* pointer, so changing this VECTOR object changes the Vector*. 
+The reason this works is that the VECTOR object internal b_str pointer points directly to the Vector struct pointed by Vector*, so changing this VECTOR object changes the output Vector struct. 
 
 ## What's next
 
