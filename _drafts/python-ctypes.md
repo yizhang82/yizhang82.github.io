@@ -1,111 +1,4 @@
 
-Bitness mismatch
-
->>> cdll.LoadLibrary(r'C:\Users\yzha\source\repos\MyDll\Debug\mydll.dll')
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "C:\Python27\lib\ctypes\__init__.py", line 440, in LoadLibrary
-    return self._dlltype(name)
-  File "C:\Python27\lib\ctypes\__init__.py", line 362, in __init__
-    self._handle = _dlopen(self._name, mode)
-WindowsError: [Error 193] %1 is not a valid Win32 application
-
-Fix bitness mismatch
-
-
->>> cdll.LoadLibrary(r'C:\Users\yzha\source\repos\MyDll\x64\Debug\mydll.dll')
-<CDLL 'C:\Users\yzha\source\repos\MyDll\x64\Debug\mydll.dll', handle 8d4c0000 at 4e3da58>
-
-Note that it is actually not yet in the properties:
-
->>> print vars(cdll)
-{'gdi32': <CDLL 'gdi32', handle 95300000 at 4e3d9b0>, 'kernel32': <CDLL 'kernel32', handle 967b0000 at 4de1550>, 'user32': <CDLL 'user32', handle 94bf0000 at 4de1dd8>, '_dlltype': <class 'ctypes.CDLL'>, 'advapi32': <CDLL 'advapi32', handle 97530000 at 4de1fd0>, 'msvcrt': <CDLL 'msvcrt', handle 94f70000 at 4de1128>}
-
->>> cdll.mydll
-<CDLL 'mydll', handle 8d4c0000 at 4e3da20>
->>> print vars(cdll)
-{'gdi32': <CDLL 'gdi32', handle 95300000 at 4e3d9b0>, 'kernel32': <CDLL 'kernel32', handle 967b0000 at 4de1550>, 'mydll': <CDLL 'mydll', handle 8d4c0000 at 4e3da20>, 'user32': <CDLL 'user32', handle 94bf0000 at 4de1dd8>, '_dlltype': <class 'ctypes.CDLL'>, 'advapi32': <CDLL 'advapi32', handle 97530000 at 4de1fd0>, 'msvcrt': <CDLL 'msvcrt', handle 94f70000 at 4de1128>}
-
->>> cdll.mydll
-<CDLL 'mydll', handle 8d4c0000 at 4e3da20>
->>> print vars(cdll)
-{'gdi32': <CDLL 'gdi32', handle 95300000 at 4e3d9b0>, 'kernel32': <CDLL 'kernel32', handle 967b0000 at 4de1550>, 'mydll': <CDLL 'mydll', handle 8d4c0000 at 4e3da20>, 'user32': <CDLL 'user32', handle 94bf0000 at 4de1dd8>, '_dlltype': <class 'ctypes.CDLL'>, 'advapi32': <CDLL 'advapi32', handle 97530000 at 4de1fd0>, 'msvcrt': <CDLL 'msvcrt', handle 94f70000 at 4de1128>}
->>> windll.mydll
-<WinDLL 'mydll', handle 8d4c0000 at 4e3da58>
->>> print vars(mydll)
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-NameError: name 'mydll' is not defined
->>> print vars(windll)
-{'kernel32': <WinDLL 'kernel32', handle 967b0000 at 4e3d630>, '_dlltype': <class 'ctypes.WinDLL'>, 'mydll': <WinDLL 'mydll', handle 8d4c0000 at 4e3da58>, 'msvcrt': <WinDLL 'msvcrt', handle 94f70000 at 4bf49b0>}
->>> print vars(oledll)
-{'kernel32': <OleDLL 'kernel32', handle 967b0000 at 4de1d68>, '_dlltype': <class 'ctypes.OleDLL'>, 'msvcrt': <OleDLL 'msvcrt', handle 94f70000 at 4de1cc0>}
->>> oledll.mydll
-<OleDLL 'mydll', handle 8d4c0000 at 4e3d978>
->>> print vars(oledll)
-{'kernel32': <OleDLL 'kernel32', handle 967b0000 at 4de1d68>, '_dlltype': <class 'ctypes.OleDLL'>, 'mydll': <OleDLL 'mydll', handle 8d4c0000 at 4e3d978>, 'msvcrt': <OleDLL 'msvcrt', handle 94f70000 at 4de1cc0>}
-
-Note that there are no functions available yet:
-
->>> print vars(mydll)
-{'_FuncPtr': <class 'ctypes._FuncPtr'>, '_handle': 140709789302784L, '_name': 'C:\\Users\\yzha\\source\\repos\\MyDll\\x64\\Debug\\mydll.dll'}
->>> mydll.Print
-<_FuncPtr object at 0x0000000005308528>
->>> print vars(mydll)
-{'Print': <_FuncPtr object at 0x0000000005308528>, '_FuncPtr': <class 'ctypes._FuncPtr'>, '_handle': 140709789302784L, '_name': 'C:\\Users\\yzha\\source\\repos\\MyDll\\x64\\Debug\\mydll.dll'}
-mydll.Print(c_char_p("abc\n"))
-
-If you have newer version of Python (2.7 or 3+):
-
-https://docs.python.org/3/reference/lexical_analysis.html#literals
-
-You can use b prefix:
-
-https://docs.python.org/3/reference/lexical_analysis.html#literals
-
-YOu can change the return type:
-
->>> mydll.Print.restype = c_bool
->>> ret = mydll.Print("ABC\n")
-ABC
->>> print ret
-False
-
-Define your own struct:
-
->>> class MY_STRUCT(Structure):
-...     _fields_ = [("field1", c_int), ("field2", c_int), ("field3", c_bool)]
-...
->>> my_struct = MY_STRUCT(1, 2, false)
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-NameError: name 'false' is not defined
->>> my_struct = MY_STRUCT(1, 2, False)
->>> print my_struct
-<__main__.MY_STRUCT object at 0x000000000529ADC8>
->>> print my_struct.field1
-1
->>> print vars(my_struct)
-{}
-
-The fields are laid out in sequential order:
-
->>> print MY_STRUCT.field2
-<Field type=c_long, ofs=4, size=4>
->>> print MY_STRUCT.field1
-<Field type=c_long, ofs=0, size=4>
->>> print MY_STRUCT.field3
-<Field type=c_bool, ofs=8, size=1>
-
-Those fields are actually not variables but methods:
-
-```py
->>> print vars(my_struct)
-{}
->>> print dir(my_struct)
-['__class__', '__ctypes_from_outparam__', '__delattr__', '__dict__', '__doc__', '__format__', '__getattribute__', '__hash__', '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__setstate__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_b_base_', '_b_needsfree_', '_fields_', '_objects', 'field1', 'field2', 'field3']
-```
-
 ## Deep Dive
 
 ```py
@@ -590,3 +483,12 @@ extern "C" {
     }
 }
 ```
+
+
+## Next in the series 
+
+I'll update them with links once they become available: 
+
+- Part 1 - CTypes
+- Part 2 - Using Python C API (CPython only)
+- Part 3 - Deep dive into ctypes module in CPython
