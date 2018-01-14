@@ -1,4 +1,65 @@
 
+# Python/C API
+
+* Pay attention to x64/x86 build in CMake - need to match exactly
+
+`-DCMAKE_GENERATOR_PLATFORM=x64`
+
+`pyconfig.h`
+
+```c
+/* For an MSVC DLL, we can nominate the .lib files used by extensions */
+#ifdef MS_COREDLL
+#	ifndef Py_BUILD_CORE /* not building the core - must be an ext */
+#		if defined(_MSC_VER)
+			/* So MSVC users need not specify the .lib file in
+			their Makefile (other compilers are generally
+			taken care of by distutils.) */
+#			ifdef _DEBUG
+#				pragma comment(lib,"python27_d.lib")
+#			else
+#				pragma comment(lib,"python27.lib")
+#			endif /* _DEBUG */
+#		endif /* _MSC_VER */
+#	endif /* Py_BUILD_CORE */
+#endif /* MS_COREDLL */  
+```
+
+`MS_NO_COREDLL`
+
+
+```
+main.obj : error LNK2019: unresolved external symbol Py_InitModule4TraceRefs_64 referenced in function initFastInt
+```
+
+```
+#ifdef _DEBUG
+#	define Py_DEBUG
+#endif
+```
+
+```c
+#ifdef Py_TRACE_REFS
+ /* When we are tracing reference counts, rename Py_InitModule4 so
+    modules compiled with incompatible settings will generate a
+    link-time error. */
+ #if SIZEOF_SIZE_T != SIZEOF_INT
+ #undef Py_InitModule4
+ #define Py_InitModule4 Py_InitModule4TraceRefs_64
+ #else
+ #define Py_InitModule4 Py_InitModule4TraceRefs
+ #endif
+#endif
+```
+
+C:\python27\libs\python27.lib
+```
+Py_InitModule4_64   
+```
+
+So when you build you need to specify release. For example, `msbuild /p:Configuration=Release`.
+
+
 ## Deep Dive
 
 ```py
