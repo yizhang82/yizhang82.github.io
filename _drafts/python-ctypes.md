@@ -59,6 +59,10 @@ Py_InitModule4_64
 
 So when you build you need to specify release. For example, `msbuild /p:Configuration=Release`.
 
+Mac
+
+sys.path.append('/Users/yizhang/github/bindings_example/python/fastint/out/')
+
 
 ## Deep Dive
 
