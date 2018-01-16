@@ -9,7 +9,7 @@ categories:
 - python
 - interop
 - ctypes
---- 
+---
 
 Recently I've been evaluating Python interop technologies for a project at work and I think it'll made an interesting blog series.  
 
@@ -285,12 +285,10 @@ The reason this works is that the VECTOR object internal b_str pointer points di
 
 ## What's next
 
-As previously mentioned, I'll cover Python C API in the next post and dive into ctypes implementation in CPython (which are written using python C API). 
+As previously mentioned, I'll cover Python C API in the next post and dive into ctypes implementation in CPython (which are written using python C API).
 
-I'll update them with links once they become available: 
+I'll update them with links once they become available:
 
-- [Part 1 - CTypes](yizhang82.me/python-interop-ctypes)
-- Part 2 - Using Python C API (CPython only)
-- Part 3 - Deep dive into ctypes module in CPython
-
-
+* [Part 1 - CTypes](/yizhang82.me/python-interop-ctypes)
+* [Part 2 - writing CPython extensions using Python/C API](/yizhang82.me/python-interop-capi)
+* Part 3 - Deep dive into ctypes module in CPython

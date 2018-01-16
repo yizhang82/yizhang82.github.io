@@ -401,6 +401,6 @@ As previously mentioned, I'll cover Python C API in the next post and dive into 
 
 I'll update them with links once they become available:
 
-* [Part 1 - CTypes](yizhang82.me/python-interop-ctypes)
-* [Part 2 - writing CPython extensions using Python/C API](yizhang82.me/python-interop-capi)
+* [Part 1 - CTypes](/yizhang82.me/python-interop-ctypes)
+* [Part 2 - writing CPython extensions using Python/C API](/yizhang82.me/python-interop-capi)
 * Part 3 - Deep dive into ctypes module in CPython
