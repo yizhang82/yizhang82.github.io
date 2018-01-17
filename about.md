@@ -12,8 +12,8 @@ In my previous life I've been working on CLR (Common Language Runtime) for ~10 y
 
 (More on the way - I'm going through some of my past projects and put them up in github)
 
-* Cross-platform NES emulator in C++: https://github.com/yizhang82/neschan
-* 16-bit DOS Editor in `MASM` (wrote in 2002): https://github.com/yizhang82/mxedit 
+* Cross-platform NES emulator in C++: <https://github.com/yizhang82/neschan>
+* 16-bit DOS Editor in `MASM` (wrote in 2002): <https://github.com/yizhang82/mxedit> 
 
 ### Contact me
 
