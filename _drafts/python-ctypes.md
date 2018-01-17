@@ -1,70 +1,22 @@
 
-# Python/C API
-
-* Pay attention to x64/x86 build in CMake - need to match exactly
-
-`-DCMAKE_GENERATOR_PLATFORM=x64`
-
-`pyconfig.h`
-
-```c
-/* For an MSVC DLL, we can nominate the .lib files used by extensions */
-#ifdef MS_COREDLL
-#	ifndef Py_BUILD_CORE /* not building the core - must be an ext */
-#		if defined(_MSC_VER)
-			/* So MSVC users need not specify the .lib file in
-			their Makefile (other compilers are generally
-			taken care of by distutils.) */
-#			ifdef _DEBUG
-#				pragma comment(lib,"python27_d.lib")
-#			else
-#				pragma comment(lib,"python27.lib")
-#			endif /* _DEBUG */
-#		endif /* _MSC_VER */
-#	endif /* Py_BUILD_CORE */
-#endif /* MS_COREDLL */  
-```
-
-`MS_NO_COREDLL`
-
-
-```
-main.obj : error LNK2019: unresolved external symbol Py_InitModule4TraceRefs_64 referenced in function initFastInt
-```
-
-```
-#ifdef _DEBUG
-#	define Py_DEBUG
-#endif
-```
-
-```c
-#ifdef Py_TRACE_REFS
- /* When we are tracing reference counts, rename Py_InitModule4 so
-    modules compiled with incompatible settings will generate a
-    link-time error. */
- #if SIZEOF_SIZE_T != SIZEOF_INT
- #undef Py_InitModule4
- #define Py_InitModule4 Py_InitModule4TraceRefs_64
- #else
- #define Py_InitModule4 Py_InitModule4TraceRefs
- #endif
-#endif
-```
-
-C:\python27\libs\python27.lib
-```
-Py_InitModule4_64   
-```
-
-So when you build you need to specify release. For example, `msbuild /p:Configuration=Release`.
-
-Mac
-
-sys.path.append('/Users/yizhang/github/bindings_example/python/fastint/out/')
-
-
 ## Deep Dive
+
+Last time we've looked at using ctypes to call C API, and writing extension module using Python/C API. Now we can finally tie these two together - looking at how ctypes is actually implemented using mix of Python/C API  and Python code.
+
+You can find CPython source code [here](https://github.com/python/cpython).
+
+ctypes C implementation is [here](https://github.com/python/cpython/tree/master/Modules/_ctypes) while the python implementation is [here](https://github.com/python/cpython/tree/master/Lib/ctypes).
+
+## Loading libraries
+
+Recall that in `ctypes` we have `cdll`, `windll`, `oledll` object to help loading libraries. They are really LibraryLoader objects:
+
+```py
+>>> print ctypes.cdll
+<ctypes.LibraryLoader object at 0x000000000592F470>
+```
+
+And that type is just plain python code:
 
 ```py
 class LibraryLoader(object):
@@ -85,7 +37,11 @@ class LibraryLoader(object):
         return self._dlltype(name)
 ```
 
-cdll, pydll, windll, oledll are simply instances of LibraryLoader class.
+The `__getattr__` is the magic that implements attribute-based library loading. Note that if the attribute is already there, CPython returns that attribute immediately without calling `__getattr__`. Otherwise you would end up with multiple copies of the same attribute, or keeping creating new library objects and discarding old ones - not very efficent.
+
+`dlltype` is the type for each kind of DLL, such as `CDLL`, `PyDll`, `WinDll`, `OleDll`. `__getattr__` creates new instances of these types as needed. 
+
+`cdll`, `pydll`, `windll`, `oledll` are simply instances of `LibraryLoader` class, which are created with corresponding dlltype.
 
 ```py
 cdll = LibraryLoader(CDLL)
@@ -98,28 +54,43 @@ elif _sys.platform == "cygwin":
 else:
     pythonapi = PyDLL(None)
 
-
 if _os.name == "nt":
     windll = LibraryLoader(WinDLL)
     oledll = LibraryLoader(OleDLL)
 ```
 
-the attribute access are defined as __getattr__:
+Let's look at `CDLL` first - its init does a `dlopen` to load the library:
 
-https://github.com/python/cpython/blob/3.6/Lib/ctypes/__init__.py#L358
+```py
+class CDLL(object):
+    def __init__(self, name, mode=DEFAULT_MODE, handle=None,
+        if handle is None:
+            self._handle = _dlopen(self._name, mode)
+        else:
+            self._handle = handle
+```
 
-```python
+The attribute access are defined in `__getattr__` as well - it gets translated to `__getitem__` call which creates a new `_FuncPtr` instance.
+
+```py
     def __getattr__(self, name):
         if name.startswith('__') and name.endswith('__'):
             raise AttributeError(name)
         func = self.__getitem__(name)
         setattr(self, name, func)
         return func
+    def __getitem__(self, name_or_ordinal):
+        func = self._FuncPtr((name_or_ordinal, self))
+        if not isinstance(name_or_ordinal, int):
+            func.__name__ = name_or_ordinal
+        return func
 ```
+
+We'll look at `_FuncPtr` later - for now it's good enough to know it represents function pointer.
 
 The difference between OleDll and WinDll is simply the default settings:
 
-For CDll:
+For `CDLL` - the base class:
 
 ```py
 class CDLL(object):
@@ -127,14 +98,14 @@ class CDLL(object):
     _func_restype_ = c_int
 ```
 
-WinDLl has StdCall as default calling convention:
+`WinDll` has `StdCall` as default calling convention, and deriving from `CDLL`:
 
 ```python
     class WinDLL(CDLL):
         _func_flags_ = _FUNCFLAG_STDCALL
 ```
 
-OleDll is like WinDll (in terms of calling convention), but the default return type is also HRESULT.
+`OleDll` is like `WinDll` (in terms of calling convention), but the default return type is `HRESULT`.
 
 ```python
     class OleDLL(CDLL):
@@ -142,16 +113,20 @@ OleDll is like WinDll (in terms of calling convention), but the default return t
         _func_restype_ = HRESULT
 ```
 
-Functions are presented as CFuncPtr in _ctypes module:
+## Calling the function
 
-https://github.com/python/cpython/blob/3.6/Modules/_ctypes/_ctypes.c#L5426
-
-Gets registered here:
-
-https://github.com/python/cpython/blob/3.6/Modules/_ctypes/_ctypes.c#L5539
+In last section we discussed the how library are loaded and we didn't talk about functions yet. 
+Functions are presented as `_FuncPtr` which is basically a `_CFuncPtr` in _ctypes module:
 
 ```py
+        class _FuncPtr(_CFuncPtr):
+            _flags_ = flags
+            _restype_ = self._func_restype_
+```
 
+Now it's type to put our Python/C API knowledge to good use - `_CFuncPtr` is implemented in C:
+
+```c
 PyTypeObject PyCFuncPtr_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes.PyCFuncPtr",
@@ -195,14 +170,46 @@ PyTypeObject PyCFuncPtr_Type = {
 }
 ```
 
->>> from _ctypes import *
->>> CFuncPtr
-<type '_ctypes.PyCFuncPtr'>
->>> print vars(CFuncPtr)
-{'errcheck': <attribute 'errcheck' of '_ctypes.PyCFuncPtr' objects>, '__nonzero__': <slot wrapper '__nonzero__' of '_ctypes.PyCFuncPtr' objects>, '__new__': <built-in method __new__ of _ctypes.PyCFuncPtrType object at 0x00000000596FCA30>, 'restype': <attribute 'restype' of '_ctypes.PyCFuncPtr' objects>, 'argtypes': <attribute 'argtypes' of '_ctypes.PyCFuncPtr' objects>, '__repr__': <slot wrapper '__repr__' of '_ctypes.PyCFuncPtr' objects>, '__call__': <slot wrapper '__call__' of '_ctypes.PyCFuncPtr' objects>, '__doc__': 'Function Pointer'}
+Let's look at the `tp_new` function `PyCFuncPtr_new` first:
 
+```c
+PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    // ...
 
-```cpp
+    if (1 <= PyTuple_GET_SIZE(args) && PyTuple_Check(PyTuple_GET_ITEM(args, 0)))
+        return PyCFuncPtr_FromDll(type, args, kwds);
+```
+
+PyCFuncPtr_FromDll has quite a bit of code, but in the end these two lines are the most important:
+
+```c
+static PyObject *
+PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    // ...
+
+#ifdef MS_WIN32
+    address = FindAddress(handle, name, (PyObject *)type);
+    // ...
+#else
+    address = (PPROC)ctypes_dlsym(handle, name);
+    // ...
+```
+
+In Windows it does a `GetProcAddress` and in linux/mac it does `dlsym`.
+
+As far as calling function goes, calling the `_CFuncPtr` effectively calls `tp_call` field which is `PyCFuncPtr_call`:
+
+```c
+static PyObject *
+PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
+{
+    // ...
+    callargs = _build_callargs(self, argtypes,
+                               inargs, kwds,
+                               &outmask, &inoutmask, &numretvals); 
+    // ...
     result = _ctypes_callproc(pProc,
                        callargs,
 #ifdef MS_WIN32
@@ -213,9 +220,15 @@ PyTypeObject PyCFuncPtr_Type = {
                        converters,
                        restype,
                        checker);
+    // ...
+    return _build_result(result, callargs,
+                         outmask, inoutmask, numretvals);
+}
 ```
 
-Eventually it uses ffi_call from [FFI](https://sourceware.org/libffi/) to make the call.
+There are a lot of code in the function above, but it basically does 3 steps - preparing the arguments, making the call, and building the result and propagating the arguments back (for out/inout parameters).
+
+Eventually it uses ffi_call from [FFI](https://sourceware.org/libffi/) to make the call. `FFI` itself is quite complicated - for now just think of it as a way of being able to say "I want to make a CDecl call to this function using these arguments", without worrying about all the details in the ABI (Application Binary Interface) level.
 
 ```py
     if (FFI_OK != ffi_prep_cif(&cif,
