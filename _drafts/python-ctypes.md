@@ -228,7 +228,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 
 There are a lot of code in the function above, but it basically does 3 steps - preparing the arguments, making the call, and building the result and propagating the arguments back (for out/inout parameters).
 
-Eventually it uses ffi_call from [FFI](https://sourceware.org/libffi/) to make the call. `FFI` itself is quite complicated - for now just think of it as a way of being able to say "I want to make a CDecl call to this function using these arguments", without worrying about all the details in the ABI (Application Binary Interface) level.
+Eventually it uses ffi_call from [FFI](https://sourceware.org/libffi/) to make the call. 
 
 ```py
     if (FFI_OK != ffi_prep_cif(&cif,
@@ -245,9 +245,166 @@ Eventually it uses ffi_call from [FFI](https://sourceware.org/libffi/) to make t
     ffi_call(&cif, (void *)pProc, resmem, avalues);
 ```
 
-## Data types
+`FFI` itself is quite complicated as it needs to understand all calling conventions and for different CPUs as well (for example, procedure calls in amd64 is drastically different in SPARC) - for now just think of it as a way of being able to say "I want to make a CDecl call to this function using these arguments", without worrying about all the details in the ABI (Application Binary Interface) level.
+
+## Structs and metaclasses
+
+Now that we've looked at library loading and function loading/calling, let's take a look at how structure is implemented. Recall how you write a structure:
+
+```py
+class VECTOR3(Structure):
+    _fields_ = [("x", c_int), ("y", c_int), ("z", c_int)]
+```
+
+Somehow the VECTOR3 class gets the magic x, y, z attributes. How does this work?
+
+The magic is in the `PyCStructType` metaclass.
+
+> Metaclass is a type used to create other types - it is an alternative way of doing subclassing / inheritance in Python, and a very powerful one too. If you understand metaclass you understand Python's type system. If you are curious, see [Primer on metaclasses](https://jakevdp.github.io/blog/2012/12/01/a-primer-on-python-metaclasses/) on a excellent explanation on metaclasses and [Understanding Python Metaclasses](https://blog.ionelmc.ro/2015/02/09/understanding-python-metaclasses/) for a deeper dive. There is also a [presentation version](https://blog.ionelmc.ro/presentations/metaclase/) as well.
+
+`ctypes.Structure` is implemented in `_ctypes` module as `Struct_Type`, and type of `Struct_Type` is `PyCStructType` (`PyCStructType_Type` object).
 
 ```c
+    Py_TYPE(&Struct_Type) = &PyCStructType_Type;
+    Struct_Type.tp_base = &PyCData_Type;
+```
+
+This makes PyCStructType` a *metaclass*.
+
+Whenever you are deriving from `ctypes.Strucuture` like following:
+
+```py
+class VECTOR3(Structure):
+    _fields_ = [("x", c_int), ("y", c_int), ("z", c_int)]
+```
+
+This effectively becomes:
+
+```py
+VECTOR3 = PyCStructType('VECTOR3', (Structure), { 'fields' : [("x", c_int), ("y", c_int), ("z", c_int)]
+})
+```
+
+Note that `tp_new` of `PyCStructType_Type` is PyCStructType_new:
+
+```c
+PyTypeObject PyCStructType_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_ctypes.PyCStructType",                            /* tp_name */
+    PyCStructType_setattro,                     /* tp_setattro */
+    CDataType_methods,                          /* tp_methods */
+    PyCStructType_new,                                  /* tp_new */
+};
+```
+
+So this ends up calling PyCStructType_new with those arguments, which retrieves the `_fields_` from supplied dictionary, and assign it to `_fields_` attribute, triggering `PyCStructType_setattro`:
+
+```c
+static PyObject *
+PyCStructType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    return StructUnionType_new(type, args, kwds, 1);
+}
+
+static PyObject *
+StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isStruct)
+{
+    PyTypeObject *result;
+    PyObject *fields;
+    StgDictObject *dict;
+
+    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
+    //...
+    PyDict_Update((PyObject *)dict, result->tp_dict));
+    //...
+    fields = PyDict_GetItemString((PyObject *)dict, "_fields_");
+    //...
+    fields = PyDict_GetItemString((PyObject *)dict, "_fields_");
+    //...
+    PyObject_SetAttrString((PyObject *)result, "_fields_", fields));
+```
+
+`tp_setattro` catch the `_field_` access (from `PyObject_SetAttrString` call) and update the internal dictionary on the newly created `VECTOR3` type:
+
+```c
+static int
+PyCStructType_setattro(PyObject *self, PyObject *key, PyObject *value)
+{
+    /* XXX Should we disallow deleting _fields_? */
+    if (-1 == PyType_Type.tp_setattro(self, key, value))
+        return -1;
+
+    if (value && PyUnicode_Check(key) &&
+        _PyUnicode_EqualToASCIIString(key, "_fields_"))
+        return PyCStructUnionType_update_stgdict(self, value, 1);
+    return 0;
+}
+```
+
+`PyCStructUnionType_update_stgdict` mostly traverse the list of fields and create necessary PyCField instances as corresponding attributes. Interestingly, the attribute assignment also triggers setattro, which simply let it through as it only cares about `_fields_` access (otherwise this would be an infinite loop). When you are accessing `myVector3.x`, you are setting/getting PyCField instance, which are descriptor classes that binds to the owner class, which is the structure itself. 
+
+```c
+PyTypeObject PyCField_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_ctypes.CField",                                   /* tp_name */
+    sizeof(CFieldObject),                       /* tp_basicsize */
+    (reprfunc)PyCField_repr,                            /* tp_repr */
+    "Structure/Union member",                   /* tp_doc */
+    (descrgetfunc)PyCField_get,                 /* tp_descr_get */
+    (descrsetfunc)PyCField_set,                 /* tp_descr_set */
+```
+
+`PyCField_repr` provides the nice output you see here:
+
+```py
+>>> VECTOR3.x
+<Field type=c_long, ofs=0, size=4>
+```
+
+While `PyCField_get`/`PyCField_set` provides access to the field on this structure (`myVector3.x`) through descriptor class and bindings to the structure instance:
+
+```c
+static int
+PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
+{
+    CDataObject *dst;
+    char *ptr;
+    if (!CDataObject_Check(inst)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "not a ctype instance");
+        return -1;
+    }
+    dst = (CDataObject *)inst;
+    ptr = dst->b_ptr + self->offset;
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+                        "can't delete attribute");
+        return -1;
+    }
+    return PyCData_set(inst, self->proto, self->setfunc, value,
+                     self->index, self->size, ptr);
+}
+```
+
+In the above function, `self` is the `PyCField` instance, `inst` is `VECTOR3` (or whatever structure you have), and `value` is the new value you are assigning with. Eventually it got set on the pointer to the structure + field offset, basically `*(ptr + offset) = value`.
+
+But where is that ptr come from? 
+
+`ctypes.Structure` are essentially CDataObject*:
+
+```c
+// Fields omitted for clarity 
+static PyTypeObject Struct_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_ctypes.Structure",
+    sizeof(CDataObject),                        /* tp_basicsize */
+    GenericPyCData_new,                         /* tp_new */
+};
+```
+
+A `CDataObject` looks like this:
+
+```
 struct tagCDataObject {
     PyObject_HEAD
     char *b_ptr;                /* pointer to memory block */
@@ -262,64 +419,9 @@ struct tagCDataObject {
 };
 ```
 
-```py
-union value {
-                char c[16];
-                short s;
-                int i;
-                long l;
-                float f;
-                double d;
-                long long ll;
-                long double D;
-};
-```
+Just think of it as a generic holder of any value - like VARIANT (if COM is your thing). In particular, `b_value` field holds the well known simple data values (it's a union) and `b_ptr` points to the underlying data if it is a more complex type, like structures.
 
-
-
-```c
-static PyTypeObject Simple_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes._SimpleCData",
-    sizeof(CDataObject),                        /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
-    (reprfunc)&Simple_repr,                     /* tp_repr */
-    &Simple_as_number,                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "XXX to be provided",                       /* tp_doc */
-    (traverseproc)PyCData_traverse,             /* tp_traverse */
-    (inquiry)PyCData_clear,                     /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    Simple_methods,                             /* tp_methods */
-    0,                                          /* tp_members */
-    Simple_getsets,                             /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    (initproc)Simple_init,                      /* tp_init */
-    0,                                          /* tp_alloc */
-    GenericPyCData_new,                         /* tp_new */
-    0,                                          /* tp_free */
-};
-```
+GenericPyCData_new is fairly straight-forward - it allocates enough memory as described by the internal `stgdict` dictionary, which you can treat it as physical layout information about its fields and total size, which is calculated when `_fields_` get assigned.
 
 ```c
 static PyObject *
@@ -353,6 +455,8 @@ GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 ```
 
+PyCData_MallocBuffer handles two cases - if it is referring to a simple type (like `c_int`, etc), there is no need to allocate the int dynamically as it fits perfectly well in the `b_value` union field. Otherwise, it allocates the correct buffer size and assign to `b_ptr`.
+
 ```c
 static int PyCData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 {
@@ -383,190 +487,15 @@ static int PyCData_MallocBuffer(CDataObject *obj, StgDictObject *dict)
 }
 ```
 
-All the simple data types are sub classes:
-
-```py
-class py_object(_SimpleCData):
-    _type_ = "O"
-    def __repr__(self):
-        try:
-            return super().__repr__()
-        except ValueError:
-            return "%s(<NULL>)" % type(self).__name__
-_check_size(py_object, "P")
-
-class c_short(_SimpleCData):
-    _type_ = "h"
-_check_size(c_short)
-
-class c_ushort(_SimpleCData):
-    _type_ = "H"
-_check_size(c_ushort)
-
-class c_long(_SimpleCData):
-    _type_ = "l"
-_check_size(c_long)
-
-class c_ulong(_SimpleCData):
-    _type_ = "L"
-_check_size(c_ulong)
-```
-
-All these are maintained internally in a table mapped to its accessor and ffi type:
-
-```c
-static struct fielddesc formattable[] = {
-    { 's', s_set, s_get, &ffi_type_pointer},
-    { 'b', b_set, b_get, &ffi_type_schar},
-    { 'B', B_set, B_get, &ffi_type_uchar},
-    { 'c', c_set, c_get, &ffi_type_schar},
-    { 'd', d_set, d_get, &ffi_type_double, d_set_sw, d_get_sw},
-    { 'g', g_set, g_get, &ffi_type_longdouble},
-    { 'f', f_set, f_get, &ffi_type_float, f_set_sw, f_get_sw},
-    { 'h', h_set, h_get, &ffi_type_sshort, h_set_sw, h_get_sw},
-    { 'H', H_set, H_get, &ffi_type_ushort, H_set_sw, H_get_sw},
-    { 'i', i_set, i_get, &ffi_type_sint, i_set_sw, i_get_sw},
-    { 'I', I_set, I_get, &ffi_type_uint, I_set_sw, I_get_sw},
-/* XXX Hm, sizeof(int) == sizeof(long) doesn't hold on every platform */
-/* As soon as we can get rid of the type codes, this is no longer a problem */
-#if SIZEOF_LONG == 4
-    { 'l', l_set, l_get, &ffi_type_sint32, l_set_sw, l_get_sw},
-    { 'L', L_set, L_get, &ffi_type_uint32, L_set_sw, L_get_sw},
-#elif SIZEOF_LONG == 8
-    { 'l', l_set, l_get, &ffi_type_sint64, l_set_sw, l_get_sw},
-    { 'L', L_set, L_get, &ffi_type_uint64, L_set_sw, L_get_sw},
-#else
-# error
-#endif
-#if SIZEOF_LONG_LONG == 8
-    { 'q', q_set, q_get, &ffi_type_sint64, q_set_sw, q_get_sw},
-    { 'Q', Q_set, Q_get, &ffi_type_uint64, Q_set_sw, Q_get_sw},
-#else
-# error
-#endif
-    { 'P', P_set, P_get, &ffi_type_pointer},
-    { 'z', z_set, z_get, &ffi_type_pointer},
-#ifdef CTYPES_UNICODE
-    { 'u', u_set, u_get, NULL}, /* ffi_type set later */
-    { 'U', U_set, U_get, &ffi_type_pointer},
-    { 'Z', Z_set, Z_get, &ffi_type_pointer},
-#endif
-#ifdef MS_WIN32
-    { 'X', BSTR_set, BSTR_get, &ffi_type_pointer},
-    { 'v', vBOOL_set, vBOOL_get, &ffi_type_sshort},
-#endif
-#if SIZEOF__BOOL == 1
-    { '?', bool_set, bool_get, &ffi_type_uchar}, /* Also fallback for no native _Bool support */
-#elif SIZEOF__BOOL == SIZEOF_SHORT
-    { '?', bool_set, bool_get, &ffi_type_ushort},
-#elif SIZEOF__BOOL == SIZEOF_INT
-    { '?', bool_set, bool_get, &ffi_type_uint, I_set_sw, I_get_sw},
-#elif SIZEOF__BOOL == SIZEOF_LONG
-    { '?', bool_set, bool_get, &ffi_type_ulong, L_set_sw, L_get_sw},
-#elif SIZEOF__BOOL == SIZEOF_LONG_LONG
-    { '?', bool_set, bool_get, &ffi_type_ulong, Q_set_sw, Q_get_sw},
-#endif /* SIZEOF__BOOL */
-    { 'O', O_set, O_get, &ffi_type_pointer},
-    { 0, NULL, NULL, NULL},
-};
-```
-
-As an example - lset reads value as a long and memcpy to the target buffer (_SimpleData)
-
-```c
-static PyObject *
-l_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long val;
-    long x;
-    if (get_long(value, &val) < 0)
-        return NULL;
-    memcpy(&x, ptr, sizeof(x));
-    x = SET(long, x, val, size);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-```
-
-For structs,
-
-```c
-PyTypeObject PyCStructType_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.PyCStructType",                            /* tp_name */
-    0,                                          /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &CDataType_as_sequence,                     /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    PyCStructType_setattro,                     /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    "metatype for the CData Objects",           /* tp_doc */
-    (traverseproc)CDataType_traverse,           /* tp_traverse */
-    (inquiry)CDataType_clear,                   /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    CDataType_methods,                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    PyCStructType_new,                                  /* tp_new */
-    0,                                          /* tp_free */
-};
-```
-
-setattro catch the `_field_` access and update the internal dictionary:
-
-```c
-static int
-PyCStructType_setattro(PyObject *self, PyObject *key, PyObject *value)
-{
-    /* XXX Should we disallow deleting _fields_? */
-    if (-1 == PyType_Type.tp_setattro(self, key, value))
-        return -1;
-
-    if (value && PyUnicode_Check(key) &&
-        _PyUnicode_EqualToASCIIString(key, "_fields_"))
-        return PyCStructUnionType_update_stgdict(self, value, 1);
-    return 0;
-}
-```
-
-```c++
-extern "C" {
-    __declspec(dllexport) int Print(const char *msg)
-    {
-        cout << msg;
-
-        return 0;
-    }
-}
-```
-
+You might already noticed that the buffer is 0 initialized, and gets freed when it gets finalized. The finalization happens in `PyCData_dealloc` which does a free if needed.
 
 ## Next in the series 
+
+Originally I was planning to write 3 part series. But then I got interested in [PyPy](www.pypy.org) and decided to research into PyPy a bit more. In particular I suspect CFFI might have much better perf (at least in theory) than ctypes with a proper JIT implementation since the arguments "marshaling" can be pretty much "inlined", but that also requires JIT to be aware of various calling conventions, which is also a pretty daunting task as well (essentially implementing FFI in the JIT).
 
 I'll update them with links once they become available: 
 
 - Part 1 - CTypes
 - Part 2 - Using Python C API (CPython only)
 - Part 3 - Deep dive into ctypes module in CPython
+- Part 4 - PyPy and CFFI
