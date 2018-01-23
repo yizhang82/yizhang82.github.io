@@ -1,5 +1,18 @@
-
-## Deep Dive
+---
+layout: post
+title:  "Calling C functions from Python - part 3 - deep dive into ctypes implementation in CPython"
+date:   2018-01-22
+description: Calling C functions from Python - part 3 - deep dive into ctypes implementation in CPython
+permalink: python-interop-inside-ctypes
+comments: true
+categories:
+- python
+- interop
+- ctypes
+- cpython
+- vm
+- runtime
+---
 
 Last time we've looked at using ctypes to call C API, and writing extension module using Python/C API. Now we can finally tie these two together - looking at how ctypes is actually implemented using mix of Python/C API  and Python code.
 
@@ -493,9 +506,9 @@ You might already noticed that the buffer is 0 initialized, and gets freed when 
 
 Originally I was planning to write 3 part series. But then I got interested in [PyPy](www.pypy.org) and decided to research into PyPy a bit more. In particular I suspect CFFI might have much better perf (at least in theory) than ctypes with a proper JIT implementation since the arguments "marshaling" can be pretty much "inlined", but that also requires JIT to be aware of various calling conventions, which is also a pretty daunting task as well (essentially implementing FFI in the JIT).
 
-I'll update them with links once they become available: 
+I'll update them with links once they become available:
 
-- Part 1 - CTypes
-- Part 2 - Using Python C API (CPython only)
-- Part 3 - Deep dive into ctypes module in CPython
-- Part 4 - PyPy and CFFI
+* [Part 1 - CTypes](/python-interop-ctypes)
+* [Part 2 - writing CPython extensions using Python/C API](/python-interop-capi)
+* [Part 3 - Deep dive into ctypes implementation in CPython](/python-interop-inside-ctypes)
+* Part 4 - PyPy and CFFI

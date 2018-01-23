@@ -403,4 +403,5 @@ I'll update them with links once they become available:
 
 * [Part 1 - CTypes](/python-interop-ctypes)
 * [Part 2 - writing CPython extensions using Python/C API](/python-interop-capi)
-* Part 3 - Deep dive into ctypes module in CPython
+* [Part 3 - Deep dive into ctypes implementation in CPython](/python-interop-inside-ctypes)
+* Part 4 - PyPy and CFFI
