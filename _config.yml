@@ -84,6 +84,28 @@ font:                  Noto Sans, Helvetica, Arial, sans-serif
 # The font used for headings. Expects a string that is a valid CSS font-family value.
 font_heading:          Roboto Slab, Helvetica, Arial, sans-serif
 
+defaults:
+  - scope:
+      path: blog.md
+    values:
+      menu: true
+      order: 1
+  - scope:
+      path: projects.md
+    values:
+      menu: true
+      order: 2
+  - scope:
+      path: dotnet.md
+    values:
+      menu: true
+      order: 3
+  - scope:
+      path: about.md
+    values:
+      menu: true
+      order: 4
+
 # 3rd Party Integrations
 # ----------------------------------------------------------------------------------------
 
@@ -171,6 +193,8 @@ exclude:
   - Gemfile.lock
   - node_modules
   - package.json
+  - CHANGELOG.md
+  - NOTICE.md
   - package-lock.json
 include:
   - LICENSE.md
@@ -183,7 +207,7 @@ plugins:
   - jekyll-avatar
   # - jekyll-default-layout
   - jekyll-feed
-  # - jekyll-gist
+  - jekyll-gist
   # - jekyll-optional-front-matter
   - jekyll-paginate
   # - jekyll-readme-index

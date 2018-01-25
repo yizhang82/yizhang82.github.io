@@ -5,6 +5,7 @@ date:   2017-03-09
 categories:
 - C#
 - interop
+- dotnet
 permalink: pinvoke-union
 comments: true
 description: Talks about things to watch out for when using unions in C#

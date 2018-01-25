@@ -6,6 +6,7 @@ categories:
 - C#
 - boxing
 - typesystem
+- dotnet
 permalink: value-type-boxing
 comments: true
 description: Talks about different situation when value type boxing happens and how to avoid it

@@ -6,6 +6,7 @@ categories:
 - C#
 - interop
 - netcore
+- dotnet
 permalink: dogfooding-netstandard-2
 comments: true
 description: Walk through steps to dogfood netstandard 2.0 with a sample using ICustomMarshaler

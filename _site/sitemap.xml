@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
-<loc>http://localhost:4000/tag/hyde/</loc>
-<lastmod>2018-01-24T22:51:59-08:00</lastmod>
+<loc>http://localhost:4000/category/dotnet/</loc>
+<lastmod>2018-01-24T23:47:39-08:00</lastmod>
 </url>
 <url>
-<loc>http://localhost:4000/tag/hydejack/</loc>
-<lastmod>2018-01-24T22:51:59-08:00</lastmod>
+<loc>http://localhost:4000/category/interop/</loc>
+<lastmod>2018-01-24T23:47:39-08:00</lastmod>
 </url>
 <url>
 <loc>http://localhost:4000/calling-c-from-go</loc>
@@ -80,9 +80,6 @@
 <loc>http://localhost:4000/licenses/Apache-2.0/</loc>
 </url>
 <url>
-<loc>http://localhost:4000/CHANGELOG/</loc>
-</url>
-<url>
 <loc>http://localhost:4000/licenses/GPL-3.0/</loc>
 </url>
 <url>
@@ -90,9 +87,6 @@
 </url>
 <url>
 <loc>http://localhost:4000/licenses/MIT/</loc>
-</url>
-<url>
-<loc>http://localhost:4000/NOTICE/</loc>
 </url>
 <url>
 <loc>http://localhost:4000/licenses/PRO/</loc>
@@ -123,9 +117,6 @@
 </url>
 <url>
 <loc>http://localhost:4000/docs/7.5.0/</loc>
-</url>
-<url>
-<loc>http://localhost:4000/</loc>
 </url>
 <url>
 <loc>http://localhost:4000/docs/7.5.0/install/</loc>

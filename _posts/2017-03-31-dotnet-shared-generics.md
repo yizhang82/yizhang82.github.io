@@ -8,6 +8,7 @@ categories:
 - netcore
 - typesystem
 - generics
+- dotnet
 permalink: dotnet-generics-sharing
 comments: true
 description: Talks about how .NET achieves sharing generic code

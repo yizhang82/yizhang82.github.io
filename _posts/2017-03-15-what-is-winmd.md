@@ -5,6 +5,7 @@ date:   2017-03-15
 categories:
 - winrt
 - interop
+- dotnet
 permalink: what-is-winrt
 comments: true
 description: Clarifies what is Windows Runtime and why it is not a Runtime

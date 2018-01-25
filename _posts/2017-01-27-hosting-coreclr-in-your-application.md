@@ -9,6 +9,7 @@ categories:
 - clr
 - interop
 - hosting
+- dotnet
 ---  
 CoreCLR is the runtime that runs your .NET Core application, just like the 'classic' .NET in your machine, except it's much smaller and requires no installation. This makes it ideal for embedding .NET code as part of your application without additional dependency, and you completely are in control of the version of CoreCLR that you are running. 
 
