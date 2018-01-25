@@ -1,0 +1,92 @@
+<p>If you’ve been following .NET Core development you’ve probably already heard about .NET Standard 2.0. We are bringing back a lot of APIs from desktop to .NET Core to make migrating existing apps easier. If you’d like to read more about what is netstandard, you can refer to this <a href="https://github.com/dotnet/standard/blob/master/docs/faq.md">faq</a>. In this post I’m going to show you how to dogfood (read: try out the bleeding edge new stuff) the latest .NET Core 2.0 which has the latest API changes in .NET Standard 2.0.</p>
+
+<p>First, download one of the tarballs from below:</p>
+
+<ul>
+  <li><a href="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-dev-win-x64.latest.zip">Win 64-bit Latest Zip</a> <a href="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-dev-win-x64.latest.exe">Installer</a></li>
+  <li><a href="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-dev-osx-x64.latest.tar.gz">macOS 64-bit Latest Tar</a> <a href="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-dev-osx-x64.latest.pkg">Installer</a></li>
+  <li><a href="https://github.com/dotnet/cli/blob/master/README.md#installers-and-binaries">Others</a></li>
+</ul>
+
+<p>If you use the installer, it will overwrite your existing .NET Core installation, which is probably not what you want. The easier way is to simply extract it. Here I’ve downloaded the macOS 64-bit version, and extracted it to ~/dotnet-dev-osx-x64.latest.</p>
+
+<p>You’ll quickly notice that the folder has dotnet, a SDK folder containing tools (for example, Roslyn compiler <code class="highlighter-rouge">sdk/2.0.0-preview1-005448/Roslyn/csc.exe</code>), a shared folder containing the runtime (<code class="highlighter-rouge">shared/Microsoft.NETCore.App/2.0.0-beta-001776-00/libcoreclr.dylib</code>) and implementation assemblies, etc. To confirm that you’ve downloaded the correct tools, just run:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>yizhang@yzha-mbp:~/var/ns2$ ~/dotnet-dev-osx-x64.latest/dotnet --version
+2.0.0-preview1-005448
+</code></pre></div></div>
+
+<p>You should see 2.0.0-*.</p>
+
+<p>To try out the new APIs, you need to first create a new project using the console application template:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>yizhang@yzha-mbp:~/var/ns2$ ~/dotnet-dev-osx-x64.latest/dotnet new console
+Content generation time: 49.1374 ms
+The template "Console Application" created successfully.
+</code></pre></div></div>
+
+<p>One of the new API we’ve bought back is System.Runtime.InteropServices.ICustomMarshal. Well, I’m a bit biased since I’ve spent most of my career working with .NET interop. To try this out, I’ve copy/pasted some code from Mono.Posix (and removed some dependencies), and it just worked:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+
+<span class="k">using</span> <span class="nn">System.Runtime.InteropServices</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Unsafe</span>
+<span class="p">{</span>
+    <span class="k">class</span> <span class="nc">StringMarshaler</span> <span class="p">:</span> <span class="n">ICustomMarshaler</span> <span class="p">{</span>
+
+        <span class="k">private</span> <span class="k">static</span> <span class="n">StringMarshaler</span> <span class="n">Instance</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">StringMarshaler</span> <span class="p">();</span>
+
+        <span class="k">public</span> <span class="k">static</span> <span class="n">ICustomMarshaler</span> <span class="nf">GetInstance</span> <span class="p">(</span><span class="kt">string</span> <span class="n">s</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="n">Instance</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">CleanUpManagedData</span> <span class="p">(</span><span class="kt">object</span> <span class="n">o</span><span class="p">)</span>
+        <span class="p">{</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">CleanUpNativeData</span> <span class="p">(</span><span class="n">IntPtr</span> <span class="n">pNativeData</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">Marshal</span><span class="p">.</span><span class="nf">FreeCoTaskMem</span><span class="p">(</span><span class="n">pNativeData</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetNativeDataSize</span> <span class="p">()</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="n">IntPtr</span><span class="p">.</span><span class="n">Size</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="n">IntPtr</span> <span class="nf">MarshalManagedToNative</span> <span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">string</span> <span class="n">s</span> <span class="p">=</span> <span class="n">obj</span> <span class="k">as</span> <span class="kt">string</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">IntPtr</span><span class="p">.</span><span class="n">Zero</span><span class="p">;</span>
+            <span class="n">IntPtr</span> <span class="n">p</span> <span class="p">=</span> <span class="n">Marshal</span><span class="p">.</span><span class="nf">StringToCoTaskMemAnsi</span><span class="p">(</span><span class="n">s</span><span class="p">);</span>
+            <span class="k">return</span> <span class="n">p</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="kt">object</span> <span class="nf">MarshalNativeToManaged</span> <span class="p">(</span><span class="n">IntPtr</span> <span class="n">pNativeData</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">string</span> <span class="n">s</span> <span class="p">=</span> <span class="n">Marshal</span><span class="p">.</span><span class="nf">PtrToStringAnsi</span><span class="p">(</span><span class="n">pNativeData</span><span class="p">);</span>
+            <span class="k">return</span> <span class="n">s</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="p">[</span><span class="nf">DllImport</span> <span class="p">(</span><span class="s">"libc"</span><span class="p">,</span> <span class="n">EntryPoint</span><span class="p">=</span><span class="s">"mkdir"</span><span class="p">,</span> <span class="n">SetLastError</span><span class="p">=</span><span class="k">true</span><span class="p">)]</span>
+    <span class="k">internal</span> <span class="k">extern</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">syscall_mkdir</span> <span class="p">([</span><span class="nf">MarshalAs</span><span class="p">(</span><span class="n">UnmanagedType</span><span class="p">.</span><span class="n">CustomMarshaler</span><span class="p">,</span> <span class="n">MarshalTypeRef</span><span class="p">=</span><span class="k">typeof</span><span class="p">(</span><span class="n">StringMarshaler</span><span class="p">))]</span> <span class="kt">string</span> <span class="n">pathname</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mode</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">Program</span>
+<span class="p">{</span>
+    <span class="k">static</span> <span class="k">void</span> <span class="nf">Main</span><span class="p">(</span><span class="kt">string</span><span class="p">[]</span> <span class="n">args</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">Unsafe</span><span class="p">.</span><span class="nf">syscall_mkdir</span><span class="p">(</span><span class="s">"test"</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+        <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"test directory created"</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This program simply uses a custom marshaler that marshal a string to UTF-8 using Marshal.StringToCoTaskMemAnsi. It’s a bit overkill since string is marshaled as UTF-8 by default, but this is a demo to show the new API - you got the idea.</p>
+
+<p>Now do a <code class="highlighter-rouge">~/dotnet-dev-osx-x64.latest/dotnet restore</code> then <code class="highlighter-rouge">~/dotnet-dev-osx-x64.latest/dotnet run</code>. And see the new directory getting created.</p>
+

@@ -1,0 +1,129 @@
+<p>CoreCLR is the runtime that runs your .NET Core application, just like the ‘classic’ .NET in your machine, except it’s much smaller and requires no installation. This makes it ideal for embedding .NET code as part of your application without additional dependency, and you completely are in control of the version of CoreCLR that you are running.</p>
+
+<p>In order to include CoreCLR in your application, you need to “embed” (in CoreCLR terms, this is called hosting) CoreCLR by loading and initializing the runtime instance, and start running code. CoreCLR exposes such functionality through C APIs defined in <a href="https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/inc/coreclrhost.h">coreclrhost.h</a>. This post shows you how to do that.</p>
+
+<p>The discussion below applies to MacOS, but equally applies to Windows/Linux as well.</p>
+
+<h1 id="how-to-initialize-coreclr-and-call-managed-code-from-c">How to initialize CoreCLR and call managed code from C++</h1>
+
+<p>Obviously, you need to actually load the runtime DLL.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">void</span> <span class="o">*</span><span class="n">coreclr</span> <span class="o">=</span> <span class="n">dlopen</span><span class="p">(</span><span class="s">"libcoreclr.dylib"</span><span class="p">,</span> <span class="n">RTLD_NOW</span> <span class="o">|</span> <span class="n">RTLD_LOCAL</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Once you have coreclr loaded, you need to initialize coreclr by calling <code class="highlighter-rouge">coreclr_initialize</code> function. First step to that is to retrieve the function pointer:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">coreclr_initialize_ptr</span> <span class="n">coreclr_init</span> <span class="o">=</span> <span class="n">reinterpret_cast</span><span class="o">&lt;</span><span class="n">coreclr_initialize_ptr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">dlsym</span><span class="p">(</span><span class="n">coreclr</span><span class="p">,</span> <span class="s">"coreclr_initialize"</span><span class="p">));</span>
+</code></pre></div></div>
+
+<p>Before calling the function, it is important to set the properties to tell CoreCLR where to find the platform assemblies, and the path to locate app assembly:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>     <span class="n">string</span> <span class="n">tpa_list</span><span class="p">;</span>
+    <span class="n">AddFilesFromDirectoryToTpaList</span><span class="p">(</span><span class="n">exe_path</span><span class="p">,</span> <span class="n">tpa_list</span><span class="p">);</span>
+
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">property_keys</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">"APP_PATHS"</span><span class="p">,</span>
+        <span class="s">"TRUSTED_PLATFORM_ASSEMBLIES"</span>
+    <span class="p">};</span>
+    
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">property_values</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c1">// APP_PATHS
+</span>        <span class="n">app_path</span><span class="p">,</span>
+        <span class="c1">// TRUSTED_PLATFORM_ASSEMBLIES
+</span>        <span class="n">tpa_list</span><span class="p">.</span><span class="n">c_str</span><span class="p">()</span>
+    <span class="p">};</span>
+</code></pre></div></div>
+
+<p>The AddFilesFromDirectoryToTpaList is directly borrowed from <a href="https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/unixcoreruncommon/coreruncommon.cpp">coreruncommon.cpp</a>. It simply reads the supplied directory for dll/ni.dll using the correct order, and add everything to the list. Having <code class="highlighter-rouge">TRUST_PLATFORM_ASSEMBLIES</code> is needed so that CoreCLR knows where the framework assemblies are. With .NET Core CLI, it is typically located in /usr/local/share/dotnet, but you can have your own copy. One thing to worth out for is that all the path (app_path, tpa_list, etc) here needs to be absolute path - this required for better security. You can easily create absolute path using realpath call.</p>
+
+<p>Once you set the properties, you can now finally initialize coreclr:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">coreclr_init</span><span class="p">(</span>
+        <span class="n">app_path</span><span class="p">,</span>                               <span class="c1">// exePath
+</span>        <span class="s">"host"</span><span class="p">,</span>                                 <span class="c1">// appDomainFriendlyName
+</span>        <span class="k">sizeof</span><span class="p">(</span><span class="n">property_values</span><span class="p">)</span><span class="o">/</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">),</span> <span class="c1">// propertyCount
+</span>        <span class="n">property_keys</span><span class="p">,</span>                          <span class="c1">// propertyKeys
+</span>        <span class="n">property_values</span><span class="p">,</span>                        <span class="c1">// propertyValues
+</span>        <span class="o">&amp;</span><span class="n">coreclr_handle</span><span class="p">,</span>                        <span class="c1">// hostHandle
+</span>        <span class="o">&amp;</span><span class="n">domain_id</span>                              <span class="c1">// domainId
+</span>        <span class="p">);</span>                                       
+</code></pre></div></div>
+
+<p>Many of the parameters are self-explanatory. The API returns a handle (essentially a pointer) to the CoreCLR runtime instance, which you can use to pass to future CoreCLR related calls.</p>
+
+<p>Now that you have the handle, you can now created a delegate from a static method in a managed assembly. Assuming you want to call this function:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">class</span> <span class="nc">ManLib</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="kt">string</span> <span class="nf">Bootstrap</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s">"Bootstrap!"</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>You need to first define native function pointer type that corresponds to the native equivalent signature of the managed function:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">typedef</span> <span class="kt">char</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">bootstrap_ptr</span><span class="p">)();</span>  
+</code></pre></div></div>
+
+<p>Note that String became char *, according to the default C# marshaling rules. You can also customize the marshaling as needed using [MarshalAsAttribute].</p>
+
+<p>With the function pointer type defined, now you can create the managed delegate and marshal it back to the native function pointer type:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">bootstrap_ptr</span> <span class="n">dele</span><span class="p">;</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">coreclr_create_dele</span><span class="p">(</span>
+        <span class="n">coreclr_handle</span><span class="p">,</span>
+        <span class="n">domain_id</span><span class="p">,</span>
+        <span class="s">"manlib"</span><span class="p">,</span>
+        <span class="s">"ManLib"</span><span class="p">,</span>
+        <span class="s">"Bootstrap"</span><span class="p">,</span>
+        <span class="n">reinterpret_cast</span><span class="o">&lt;</span><span class="kt">void</span> <span class="o">**&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dele</span><span class="p">)</span>
+        <span class="p">);</span>       
+</code></pre></div></div>
+
+<p>The calling part is easy:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span> <span class="o">=</span> <span class="n">dele</span><span class="p">();</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"ManLib::Bootstrap() returned "</span> <span class="o">&lt;&lt;</span> <span class="n">msg</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>    
+    <span class="n">free</span><span class="p">(</span><span class="n">msg</span><span class="p">);</span>      <span class="c1">// returned string need to be free-ed   
+</span></code></pre></div></div>
+
+<p>The only part worth mention is that C# returned string needs to be freed. This is part of the contract between C# and native code that any memory ownership transfer needs to be freed using free (in Windows, it should be CoTaskMemFree). Otherwise you’ll create a leak.</p>
+
+<h1 id="running-the-code">Running the code</h1>
+
+<p>First, you’ll need to compile the code using g++. You can find the code [here] (https://gist.github.com/yizhang82/1c7c8c9c31a345b1841e64a57856f690). Also, make sure you set include path that has a copy of <a href="https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/inc/coreclrhost.h">coreclrhost.h</a>.</p>
+
+<p>Once you have that, use your .NET Core CLI (dotnet) to create a new .NET core project, change the output to a DLL named manlib.dll, put the C# code shown earlier there, and compile that into manlib.dll. Copy that to the directory where host.cpp is.</p>
+
+<p>Now that you have everything, run the host you compiled earlier, and point it to your dotnet package directory that contains coreclr and all the shared libraries, typically at /usr/local/share/dotnet/shared/Microsoft.NETCore.App/1.0.1, for example:</p>
+
+<p><code class="highlighter-rouge">./host /usr/local/share/dotnet/shared/Microsoft.NETCore.App/1.0.1</code></p>
+
+<p>If everything works as expected, you should see:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pp_path:/Users/yizhang/git/personal/blogs/clr/hosting-coreclr/src
+Loading CoreCLR...
+coreclr_path:/usr/local/share/dotnet/shared/Microsoft.NETCore.App/1.0.1/libcoreclr.dylib
+Initializing CoreCLR...
+Creating delegate...
+Calling ManLib::Bootstrap() through delegate...
+ManLib::Bootstrap() returned Bootstrap!
+</code></pre></div></div>
+
+<p>Imagine that you can build an application having its own copy of coreclr and libraries, and run managed code this way. You can also extend this to be a self-contained COM component as well, if that’s your thing.</p>
+
+<h1 id="more-information">More information</h1>
+
+<p>If you are curious to find out more details, you can take a look at how the test host is implemented in CoreCLR:</p>
+
+<p>https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/corerun/corerun.cpp</p>
+
+<p>This is not the host used in .NET Core / CLI, but it provides excellent insight into how one writes a host. The version I presented here is a simplified minimum version.</p>
+
+<p>If you are running into issues with this sample, you might want to check out CoreCLR doc on <a href="https://github.com/dotnet/coreclr/blob/master/Documentation/building/debugging-instructions.md">how to debug</a>.</p>
+
+<p>Good luck!</p>

@@ -1,0 +1,264 @@
+<p>Recently I’ve been evaluating Python interop technologies for a project at work and I think it’ll made an interesting blog series.</p>
+
+<p>Let’s say your have following C code (add <code class="highlighter-rouge">extern "C"</code> if you are in C++ land) and compile it into a dynamic library (<code class="highlighter-rouge">dll</code>/<code class="highlighter-rouge">.so</code>/<code class="highlighter-rouge">.dylib</code>):</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">int</span> <span class="nf">Print</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"%s"</span><span class="p">,</span> <span class="n">msg</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="kt">int</span> <span class="nf">Add</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="k">struct</span> <span class="n">Vector</span>
+    <span class="p">{</span>
+        <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+        <span class="kt">int</span> <span class="n">y</span><span class="p">;</span>
+        <span class="kt">int</span> <span class="n">z</span><span class="p">;</span>
+    <span class="p">};</span>
+
+    <span class="k">struct</span> <span class="n">Vector</span> <span class="nf">AddVector</span><span class="p">(</span><span class="k">struct</span> <span class="n">Vector</span> <span class="n">a</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Vector</span> <span class="n">b</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">Vector</span> <span class="n">v</span><span class="p">;</span>
+        <span class="n">v</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">a</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">b</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+        <span class="n">v</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">a</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">b</span><span class="p">.</span><span class="n">y</span><span class="p">;</span>
+        <span class="n">v</span><span class="p">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">a</span><span class="p">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">b</span><span class="p">.</span><span class="n">z</span><span class="p">;</span>
+        <span class="k">return</span> <span class="n">v</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">typedef</span> <span class="k">struct</span> <span class="n">Vector</span> <span class="p">(</span><span class="o">*</span><span class="n">pfnAddVectorCallback</span><span class="p">)(</span><span class="k">struct</span> <span class="n">Vector</span> <span class="n">a</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Vector</span> <span class="n">b</span><span class="p">);</span>
+
+    <span class="k">struct</span> <span class="n">Vector</span> <span class="nf">AddVectorCallback</span><span class="p">(</span><span class="n">pfnAddVectorCallback</span> <span class="n">callback</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Vector</span> <span class="n">a</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Vector</span> <span class="n">b</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="n">callback</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+    <span class="p">}</span>
+</code></pre></div></div>
+
+<p>One of the ways to call C API from Python is to use <a href="https://docs.python.org/2/library/ctypes.html">ctypes</a> module. The tutorial in docs.python.org is fairly comprehensive and I certainly don’t intend to cover everything in the tutorial.</p>
+
+<p>Instead, I’ll cover it in a exploratory style to show you how what I did to understand these API, and add some fairly interesting details of the API not quite covered by the tutorial (some of the behavior of the API are a bit obscure).</p>
+
+<p>In a future post I’ll also deep dive into ctypes implementation in <a href="https://github.com/python/cpython">CPython</a>, but for me to get to that, I need to cover the Python C API first in part 2 first, which makes the deep dive part 3. :)</p>
+
+<p>Anyway, let’s get started.</p>
+
+<h2 id="getting-started">Getting started</h2>
+
+<p>First let’s import the ctypes module:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="o">*</span>
+</code></pre></div></div>
+
+<p>To load a module, you can use <code class="highlighter-rouge">cdll</code>, <code class="highlighter-rouge">windll</code>, <code class="highlighter-rouge">oledll</code> library loader objects.</p>
+
+<p>For example, to load kernel32, you can do:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">cdll</span><span class="o">.</span><span class="n">kernel32</span>
+<span class="o">&lt;</span><span class="n">CDLL</span> <span class="s">'kernel32'</span><span class="p">,</span> <span class="n">handle</span> <span class="mi">56930000</span> <span class="n">at</span> <span class="mi">508</span><span class="n">eb70</span><span class="o">&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="nb">vars</span><span class="p">(</span><span class="n">cdll</span><span class="p">)</span>
+<span class="p">{</span><span class="s">'kernel32'</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">CDLL</span> <span class="s">'kernel32'</span><span class="p">,</span> <span class="n">handle</span> <span class="mi">56930000</span> <span class="n">at</span> <span class="mi">508</span><span class="n">eb70</span><span class="o">&gt;</span><span class="p">,</span> <span class="s">'_dlltype'</span><span class="p">:</span> <span class="o">&lt;</span><span class="k">class</span> <span class="err">'</span><span class="nc">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="s">'&gt;}</span><span class="err">
+</span></code></pre></div></div>
+
+<p>Basically accessing its attribute would automatically load a DLL by name. This is implemented in Python by overriding  <a href="https://docs.python.org/2/reference/datamodel.html#object.__getattr__"><code class="highlighter-rouge">__getattr__</code></a> and does a LoadLibrary. Obviously this either requires the DLL to be already loaded or searchable using various rules. Since every process effectively has kernel32.dll loaded in the process, you’ll always load kernel32 successfully.</p>
+
+<p>Let’s say we built our dll as MyDll, and try to load it:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">cdll</span><span class="o">.</span><span class="n">MyDll</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+  <span class="n">File</span> <span class="s">"C:</span><span class="err">\</span><span class="s">Python27</span><span class="err">\</span><span class="s">lib</span><span class="err">\</span><span class="s">ctypes</span><span class="err">\</span><span class="s">__init__.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">436</span><span class="p">,</span> <span class="ow">in</span> <span class="n">__getattr__</span>
+    <span class="n">dll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dlltype</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s">"C:</span><span class="err">\</span><span class="s">Python27</span><span class="err">\</span><span class="s">lib</span><span class="err">\</span><span class="s">ctypes</span><span class="err">\</span><span class="s">__init__.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">366</span><span class="p">,</span> <span class="ow">in</span> <span class="n">__init__</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span> <span class="o">=</span> <span class="n">_dlopen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+<span class="nb">WindowsError</span><span class="p">:</span> <span class="p">[</span><span class="n">Error</span> <span class="mi">126</span><span class="p">]</span> <span class="n">The</span> <span class="n">specified</span> <span class="n">module</span> <span class="n">could</span> <span class="ow">not</span> <span class="n">be</span> <span class="n">found</span>
+</code></pre></div></div>
+
+<p>Well, that didn’t work. This is because MyDll is not locatable in path, application directory, nor system32.</p>
+
+<p>OK. Let’s try again using <code class="highlighter-rouge">cdll.LoadLibrary</code>:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s">r"D:\Projects\MyDll\Debug\mydll.dll"</span><span class="p">)</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+  <span class="n">File</span> <span class="s">"C:</span><span class="err">\</span><span class="s">Python27</span><span class="err">\</span><span class="s">lib</span><span class="err">\</span><span class="s">ctypes</span><span class="err">\</span><span class="s">__init__.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">444</span><span class="p">,</span> <span class="ow">in</span> <span class="n">LoadLibrary</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dlltype</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s">"C:</span><span class="err">\</span><span class="s">Python27</span><span class="err">\</span><span class="s">lib</span><span class="err">\</span><span class="s">ctypes</span><span class="err">\</span><span class="s">__init__.py"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">366</span><span class="p">,</span> <span class="ow">in</span> <span class="n">__init__</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_handle</span> <span class="o">=</span> <span class="n">_dlopen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+<span class="nb">WindowsError</span><span class="p">:</span> <span class="p">[</span><span class="n">Error</span> <span class="mi">193</span><span class="p">]</span> <span class="o">%</span><span class="mi">1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">a</span> <span class="n">valid</span> <span class="n">Win32</span> <span class="n">application</span>
+</code></pre></div></div>
+
+<p>Hmm.. That didn’t work either. Unfortunately the error didn’t provide a good description of the actual problem. The problem is that I’ve compiled my dll as a 32-bit DLL while Python.exe is 64-bit, so it doesn’t think it’s a valid (64-bit) application (win32 application is just a general term for 32-bit/64-bit windows applications, as opposed to 16-bit windows).</p>
+
+<p>Recompiling the DLL as 64-bit fixed it:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s">r"D:\Projects\MyDll\x64\Debug\mydll.dll"</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">CDLL</span> <span class="s">'D:</span><span class="err">\</span><span class="s">Projects</span><span class="err">\</span><span class="s">MyDll</span><span class="se">\x64</span><span class="err">\</span><span class="s">Debug</span><span class="err">\</span><span class="s">mydll.dll'</span><span class="p">,</span> <span class="n">handle</span> <span class="mi">4</span><span class="n">cae0000</span> <span class="n">at</span> <span class="mi">5064</span><span class="n">ac8</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>Interestingly, it doesn’t really show up in cdll, until you access <code class="highlighter-rouge">cdll.mydll</code>:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="nb">vars</span><span class="p">(</span><span class="n">cdll</span><span class="p">)</span>
+<span class="p">{</span><span class="s">'kernel32'</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">CDLL</span> <span class="s">'kernel32'</span><span class="p">,</span> <span class="n">handle</span> <span class="mi">56930000</span> <span class="n">at</span> <span class="mi">508</span><span class="n">eb70</span><span class="o">&gt;</span><span class="p">,</span> <span class="s">'_dlltype'</span><span class="p">:</span> <span class="o">&lt;</span><span class="k">class</span> <span class="err">'</span><span class="nc">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="s">'&gt;}</span><span class="err">
+</span><span class="s">&gt;&gt;&gt; cdll.mydll</span><span class="err">
+</span><span class="s">&lt;CDLL '</span><span class="n">mydll</span><span class="s">', handle 4cae0000 at 509d5f8&gt;</span><span class="err">
+</span></code></pre></div></div>
+
+<p>This is because <code class="highlighter-rouge">cdll.LoadLibrary</code> only returns a new instance of <code class="highlighter-rouge">CDLL</code> object. Because garbage collector didn’t kick in yet, the DLL is still loaded in this process, and therefore accessing cdll.mydll would “just work”. However, do note that these two mydlls are separate Python objects (<code class="highlighter-rouge">5064ac8</code> vs <code class="highlighter-rouge">509d5f8</code>), but pointing to the same library (<code class="highlighter-rouge">56930000</code>).</p>
+
+<p>However, the best way is to keep the instance in a variable - there is no point loading this library twice (there is no harm though as DLL has a ref-count maintained by the OS and you wouldn’t load two copies - there is just one as long as it is the same one).</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">mydll</span> <span class="o">=</span> <span class="n">cdll</span><span class="o">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s">r"D:\Projects\MyDll\x64\Debug\mydll.dll"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="calling-the-function">Calling the function</h2>
+
+<p>Let’s try calling <code class="highlighter-rouge">Print</code> - just call it as a magic attribute:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="nb">vars</span><span class="p">(</span><span class="n">mydll</span><span class="p">)</span>
+<span class="p">{</span><span class="s">'_FuncPtr'</span><span class="p">:</span> <span class="o">&lt;</span><span class="k">class</span> <span class="err">'</span><span class="nc">ctypes</span><span class="o">.</span><span class="n">_FuncPtr</span><span class="s">'&gt;, '</span><span class="n">_handle</span><span class="s">': 140734480777216L, '</span><span class="n">_name</span><span class="s">': '</span><span class="n">D</span><span class="p">:</span>\\<span class="n">Projects</span>\\<span class="n">MyDll</span>\\<span class="n">x64</span>\\<span class="n">Debug</span>\\<span class="n">mydll</span><span class="o">.</span><span class="n">dll</span><span class="s">'}</span><span class="err">
+
+</span><span class="s">&gt;&gt;&gt; ret = mydll.Print("abc</span><span class="se">\n</span><span class="s">")</span><span class="err">
+</span><span class="s">abc</span><span class="err">
+
+</span><span class="s">&gt;&gt;&gt; print vars(mydll)</span><span class="err">
+</span><span class="s">{'</span><span class="n">Print</span><span class="s">': &lt;_FuncPtr object at 0x0000000005501528&gt;, '</span><span class="n">_FuncPtr</span><span class="s">': &lt;class '</span><span class="n">ctypes</span><span class="o">.</span><span class="n">_FuncPtr</span><span class="s">'&gt;, '</span><span class="n">_handle</span><span class="s">': 140734480777216L, '</span><span class="n">_name</span><span class="s">': '</span><span class="n">D</span><span class="p">:</span>\\<span class="n">Projects</span>\\<span class="n">MyDll</span>\\<span class="n">x64</span>\\<span class="n">Debug</span>\\<span class="n">mydll</span><span class="o">.</span><span class="n">dll</span><span class="s">'}</span><span class="err">
+</span></code></pre></div></div>
+
+<p>Note that calling mydll.Print magically inserts a new attribute on the mydll object. Again, this is achieved through <a href="https://docs.python.org/2/reference/datamodel.html#object.__getattr__"><code class="highlighter-rouge">__getattr__</code></a></p>
+
+<p>So how does ctypes call Print internally? A few things happens:</p>
+<ul>
+  <li>ctypes does a GetProcAddress (or <code class="highlighter-rouge">dlsym</code>) on <code class="highlighter-rouge">Print</code> to get the internal address</li>
+  <li>ctypes automatically recognize that you are passing a “abc”, and converts it to a char *</li>
+  <li>ctypes uses <a href="https://sourceware.org/libffi/">FFI</a> to make the call, using <code class="highlighter-rouge">cdecl</code> calling convention. CDll by default uses cdecl.</li>
+</ul>
+
+<p>Now let’s try doing an <code class="highlighter-rouge">Add</code>:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">mydll</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="mi">3</span>
+</code></pre></div></div>
+
+<p>There is a bit ctypes magic at play: by default ctypes assumes every function returns a int, so this works out fairly well. If you want a different return type, you can change it by assigning a type to <code class="highlighter-rouge">restype</code> attribute. In this case, what we need is ctypes.c_char, which is the 1-byte char type in C.</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">mydll</span><span class="o">.</span><span class="n">Add</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">c_char</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">mydll</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="mi">97</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c"># this can be dangerous!</span>
+<span class="s">'b'</span>
+</code></pre></div></div>
+
+<p>Now Add would interpret the returned int automatically as a char. Note that this can be dangerous as the size of int and char aren’t exactly the same. However, in most platforms / calling conventions, return value are returned via a register (EAX/RAX in intel platforms), so this simply involves a truncation and work out fine. But again, you don’t want to make such assumptions. So this is just for illustration purpose only.</p>
+
+<p>Besides CDLL, there is also <code class="highlighter-rouge">windll</code> and <code class="highlighter-rouge">oledll</code>. <code class="highlighter-rouge">windll</code> by default treat the function as stdcall, and <code class="highlighter-rouge">oledll</code> would treat it as a COM function, which means accessing the function by an vtable offset, with stdcall, and returning HRESULT.</p>
+
+<h2 id="define-your-own-struct">Define your own struct</h2>
+
+<p>Let’s take a look at how to define your own struct. You can do that by deriving from <code class="highlighter-rouge">ctypes.Structure</code> type, and supply a set of fields through the magic <code class="highlighter-rouge">_fields_</code> attribute:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="k">class</span> <span class="nc">VECTOR</span><span class="p">(</span><span class="n">Structure</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">_fields_</span> <span class="o">=</span> <span class="p">[(</span><span class="s">"x"</span><span class="p">,</span> <span class="n">c_int</span><span class="p">),</span> <span class="p">(</span><span class="s">"y"</span><span class="p">,</span> <span class="n">c_int</span><span class="p">),</span> <span class="p">(</span><span class="s">"z"</span><span class="p">,</span> <span class="n">c_int</span><span class="p">)]</span>
+<span class="o">...</span>
+</code></pre></div></div>
+
+<p>If you print out the individual fields in the <code class="highlighter-rouge">VECTOR</code> type, you’ll see magic attributes showing up:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="n">VECTOR</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">VECTOR</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">VECTOR</span><span class="o">.</span><span class="n">z</span>
+<span class="o">&lt;</span><span class="n">Field</span> <span class="nb">type</span><span class="o">=</span><span class="n">c_long</span><span class="p">,</span> <span class="n">ofs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">4</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">Field</span> <span class="nb">type</span><span class="o">=</span><span class="n">c_long</span><span class="p">,</span> <span class="n">ofs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">4</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">Field</span> <span class="nb">type</span><span class="o">=</span><span class="n">c_long</span><span class="p">,</span> <span class="n">ofs</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">4</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>Note that the individual fields are nicely laid out sequentially (ofs=0, 4, 8), just what you would expect from a good old C struct.</p>
+
+<p>Now we can create new instances of VECTOR and return back VECTOR:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">vector_a</span> <span class="o">=</span> <span class="n">VECTOR</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">vector_b</span> <span class="o">=</span> <span class="n">VECTOR</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">mydll</span><span class="o">.</span><span class="n">AddVector</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">VECTOR</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">vector_c</span> <span class="o">=</span> <span class="n">mydll</span><span class="o">.</span><span class="n">AddVector</span><span class="p">(</span><span class="n">vector_a</span><span class="p">,</span> <span class="n">vector_b</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="n">vector_c</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">vector_c</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">vector_c</span><span class="o">.</span><span class="n">z</span>
+<span class="mi">3</span> <span class="mi">5</span> <span class="mi">7</span>
+</code></pre></div></div>
+
+<h2 id="calling-python-code-from-c-and-some-surpises">Calling python code from C and some surpises</h2>
+
+<p>Let’s make this a bit more interesting. Let’s try to call AddVectorCallback while passinging a python function. To do this you need to make a callback function type first:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">ADDVECTORCALLBACK</span> <span class="o">=</span> <span class="n">CFUNCTYPE</span><span class="p">(</span><span class="n">VECTOR</span><span class="p">,</span> <span class="n">VECTOR</span><span class="p">,</span> <span class="n">VECTOR</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>With this type we can then define a Python function that does the add:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">AddVectorImpl</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="o">...</span>     <span class="k">return</span> <span class="n">VECTOR</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">mydll</span><span class="o">.</span><span class="n">AddVectorCallback</span><span class="p">(</span><span class="n">ADDVECTORCALLBACK</span><span class="p">(</span><span class="n">AddVectorImpl</span><span class="p">),</span> <span class="n">VECTOR</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">VECTOR</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s">"&lt;stdin&gt;"</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="nb">TypeError</span><span class="p">:</span> <span class="n">invalid</span> <span class="n">result</span> <span class="nb">type</span> <span class="k">for</span> <span class="n">callback</span> <span class="n">function</span>
+</code></pre></div></div>
+
+<p>Unfortunately, this doesn’t work. Only simple data types like c_int are supported. Complex data types like struct/union are not, because they didn’t provide a setfunc. We’ll cover more of these details in a future deepdive ctypes post.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        <span class="n">StgDictObject</span> <span class="o">*</span><span class="n">dict</span> <span class="o">=</span> <span class="n">PyType_stgdict</span><span class="p">(</span><span class="n">restype</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">dict</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">||</span> <span class="n">dict</span><span class="o">-&gt;</span><span class="n">setfunc</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+          <span class="n">PyErr_SetString</span><span class="p">(</span><span class="n">PyExc_TypeError</span><span class="p">,</span>
+                          <span class="s">"invalid result type for callback function"</span><span class="p">);</span>
+          <span class="k">goto</span> <span class="n">error</span><span class="p">;</span>
+        <span class="p">}</span>
+</code></pre></div></div>
+
+<p>The workaround is to pass in a pointer instead:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">typedef</span> <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">pfnAddVectorCallback</span><span class="p">)(</span><span class="k">struct</span> <span class="n">Vector</span> <span class="n">a</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Vector</span> <span class="n">b</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Vector</span> <span class="o">*</span><span class="n">c</span><span class="p">);</span>
+
+    <span class="k">struct</span> <span class="n">Vector</span> <span class="nf">AddVectorCallback</span><span class="p">(</span><span class="n">pfnAddVectorCallback</span> <span class="n">callback</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Vector</span> <span class="n">a</span><span class="p">,</span> <span class="k">struct</span> <span class="n">Vector</span> <span class="n">b</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">Vector</span> <span class="n">c</span><span class="p">;</span>
+        <span class="n">callback</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">c</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">c</span><span class="p">;</span>
+    <span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">ADDVECTORCALLBACK</span> <span class="o">=</span> <span class="n">CFUNCTYPE</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="n">VECTOR</span><span class="p">,</span> <span class="n">VECTOR</span><span class="p">,</span> <span class="n">POINTER</span><span class="p">(</span><span class="n">VECTOR</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">AddVectorImpl</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">c</span><span class="o">.</span><span class="n">contents</span> <span class="o">=</span> <span class="n">VECTOR</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>And let’s see if it works:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="n">vector</span> <span class="o">=</span> <span class="n">mydll</span><span class="o">.</span><span class="n">AddVectorCallback</span><span class="p">(</span><span class="n">ADDVECTORCALLBACK</span><span class="p">(</span><span class="n">AddVectorImpl</span><span class="p">),</span> <span class="n">VECTOR</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">VECTOR</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="n">vector</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">vector</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">vector</span><span class="o">.</span><span class="n">z</span>
+<span class="o">-</span><span class="mi">858993460</span> <span class="o">-</span><span class="mi">858993460</span> <span class="o">-</span><span class="mi">858993460</span>
+</code></pre></div></div>
+
+<p>OK. So nope. Appears that setting <code class="highlighter-rouge">contents</code> doesn’t do what we want. Reading the code - it actually simply swap the internal pointers of the pointer object and doesn’t do any assignment!</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="o">*</span><span class="p">(</span><span class="kt">void</span> <span class="o">**</span><span class="p">)</span><span class="n">self</span><span class="o">-&gt;</span><span class="n">b_ptr</span> <span class="o">=</span> <span class="n">dst</span><span class="o">-&gt;</span><span class="n">b_ptr</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>The correct way is to assign it on the VECTOR object returned from <code class="highlighter-rouge">contents</code> attribute directly:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">AddVectorImpl</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">c</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">x</span>
+<span class="o">...</span>     <span class="n">c</span><span class="o">.</span><span class="n">contexts</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">y</span>
+<span class="o">...</span>     <span class="n">c</span><span class="o">.</span><span class="n">contents</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">z</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">z</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">vector</span> <span class="o">=</span> <span class="n">mydll</span><span class="o">.</span><span class="n">AddVectorCallback</span><span class="p">(</span><span class="n">ADDVECTORCALLBACK</span><span class="p">(</span><span class="n">AddVectorImpl</span><span class="p">),</span> <span class="n">VECTOR</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">VECTOR</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="n">vector</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">vector</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">vector</span><span class="o">.</span><span class="n">z</span>
+<span class="mi">3</span> <span class="mi">5</span> <span class="mi">7</span>
+</code></pre></div></div>
+
+<p>The reason this works is that the VECTOR object internal b_str pointer points directly to the Vector struct pointed by Vector*, so changing this VECTOR object changes the output Vector struct.</p>
+
+<h2 id="whats-next">What’s next</h2>
+
+<p>As previously mentioned, I’ll cover Python C API in the next post and dive into ctypes implementation in CPython (which are written using python C API).</p>
+
+<p>I’ll update them with links once they become available:</p>
+
+<ul>
+  <li><a href="/python-interop-ctypes">Part 1 - CTypes</a></li>
+  <li><a href="/python-interop-capi">Part 2 - writing CPython extensions using Python/C API</a></li>
+  <li><a href="/python-interop-inside-ctypes">Part 3 - Deep dive into ctypes implementation in CPython</a></li>
+  <li>Part 4 - PyPy and CFFI</li>
+</ul>

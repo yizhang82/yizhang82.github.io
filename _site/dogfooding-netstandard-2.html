@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en"><!--
+ __  __                __                                     __
+/\ \/\ \              /\ \             __                    /\ \
+\ \ \_\ \   __  __    \_\ \      __   /\_\      __       ___ \ \ \/'\
+ \ \  _  \ /\ \/\ \   /'_` \   /'__`\ \/\ \   /'__`\    /'___\\ \ , <
+  \ \ \ \ \\ \ \_\ \ /\ \L\ \ /\  __/  \ \ \ /\ \L\.\_ /\ \__/ \ \ \\`\
+   \ \_\ \_\\/`____ \\ \___,_\\ \____\ _\ \ \\ \__/.\_\\ \____\ \ \_\ \_\
+    \/_/\/_/ `/___/> \\/__,_ / \/____//\ \_\ \\/__/\/_/ \/____/  \/_/\/_/
+                /\___/                \ \____/
+                \/__/                  \/___/
+
+Powered by Hydejack v7.5.0 <https://qwtel.com/hydejack/>
+-->
+
+
+
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+
+  
+<!-- Begin Jekyll SEO tag v2.3.0 -->
+<title>Dogfooding .NET Standard 2.0 latest build | yizhang82’s blog</title>
+<meta property="og:title" content="Dogfooding .NET Standard 2.0 latest build" />
+<meta name="author" content="Yi Zhang" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Walk through steps to dogfood netstandard 2.0 with a sample using ICustomMarshaler" />
+<meta property="og:description" content="Walk through steps to dogfood netstandard 2.0 with a sample using ICustomMarshaler" />
+<link rel="canonical" href="http://localhost:4000/dogfooding-netstandard-2" />
+<meta property="og:url" content="http://localhost:4000/dogfooding-netstandard-2" />
+<meta property="og:site_name" content="yizhang82’s blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2017-03-18T00:00:00-07:00" />
+<script type="application/ld+json">
+{"name":null,"description":"Walk through steps to dogfood netstandard 2.0 with a sample using ICustomMarshaler","author":{"@type":"Person","name":"Yi Zhang"},"@type":"BlogPosting","url":"http://localhost:4000/dogfooding-netstandard-2","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/icons/icon.png"},"name":"Yi Zhang"},"image":null,"headline":"Dogfooding .NET Standard 2.0 latest build","dateModified":"2017-03-18T00:00:00-07:00","datePublished":"2017-03-18T00:00:00-07:00","sameAs":null,"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/dogfooding-netstandard-2"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+  
+    <meta name="keywords" content="">
+  
+
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="yizhang82's blog">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<meta name="application-name" content="yizhang82's blog">
+<meta name="msapplication-config" content="/assets/ieconfig.xml">
+
+
+<meta name="theme-color" content="#4fb1ba">
+
+
+<meta name="generator" content="Hydejack v7.5.0">
+
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="yizhang82's blog" />
+
+
+
+<link rel="alternate" href="http://localhost:4000/dogfooding-netstandard-2" hreflang="en">
+
+<link rel="shortcut icon" href="/assets/icons/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icons/icon.png">
+
+<link rel="manifest" href="/assets/manifest.json">
+
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+
+
+
+
+<link id="_disqusJS" rel="dns-prefetch" href="https://yizhang82.disqus.com/embed.js">
+
+
+
+<link id="_katexJS"  rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.js">
+<link id="_katexCSS" rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.css">
+
+<script>
+  function stdOnEnd(n,e){n.onload=function(){this.onerror=this.onload=null,e(null,n)},n.onerror=function(){this.onerror=this.onload=null,e(new Error("Failed to load "+this.src),n)}}function ieOnEnd(n,e){n.onreadystatechange=function(){"complete"!=this.readyState&&"loaded"!=this.readyState||(this.onreadystatechange=null,e(null,n))}}window.setRelStylesheet=function(n){function e(){this.rel="stylesheet"}var o=document.getElementById(n);o.addEventListener?o.addEventListener("load",e,!1):o.onload=e},window._loaded=!1,window.loadJSDeferred=function(n,e){function o(){window._loaded=!0;var o=document.createElement("script");o.src=n,e&&(("onload"in o?stdOnEnd:ieOnEnd)(o,e),o.onload||stdOnEnd(o,e));var t=document.scripts[0];t.parentNode.insertBefore(o,t)}window._loaded?o():window.addEventListener?window.addEventListener("load",o,!1):window.onload=o};
+!function(a){"use strict";var b=function(b,c,d){function e(a){return h.body?a():void setTimeout(function(){e(a)})}function f(){i.addEventListener&&i.removeEventListener("load",f),i.media=d||"all"}var g,h=a.document,i=h.createElement("link");if(c)g=c;else{var j=(h.body||h.getElementsByTagName("head")[0]).childNodes;g=j[j.length-1]}var k=h.styleSheets;i.rel="stylesheet",i.href=b,i.media="only x",e(function(){g.parentNode.insertBefore(i,c?g:g.nextSibling)});var l=function(a){for(var b=i.href,c=k.length;c--;)if(k[c].href===b)return a();setTimeout(function(){l(a)})};return i.addEventListener&&i.addEventListener("load",f),i.onloadcssdefined=l,l(f),i};"undefined"!=typeof exports?exports.loadCSS=b:a.loadCSS=b}("undefined"!=typeof global?global:this);
+!function(a){if(a.loadCSS){var b=loadCSS.relpreload={};if(b.support=function(){try{return a.document.createElement("link").relList.supports("preload")}catch(b){return!1}},b.poly=function(){for(var b=a.document.getElementsByTagName("link"),c=0;c<b.length;c++){var d=b[c];"preload"===d.rel&&"style"===d.getAttribute("as")&&(a.loadCSS(d.href,d,d.getAttribute("media")),d.rel=null)}},!b.support()){b.poly();var c=a.setInterval(b.poly,300);a.addEventListener&&a.addEventListener("load",function(){b.poly(),a.clearInterval(c)}),a.attachEvent&&a.attachEvent("onload",function(){a.clearInterval(c)})}}}(this);
+
+  window._noPushState = false;
+  window._noDrawer = false;
+</script>
+
+<!--[if gt IE 8]><!---->
+
+
+<script>
+  WebFontConfig = {
+    
+    google: {
+      families: ['Roboto+Slab:700','Noto+Sans:400,400i,700,700i']
+    },
+    
+
+    custom: {
+      families: ['icomoon'],
+      urls: ['/assets/icomoon/style.css']
+    }
+  };
+  (function(d) {
+    var wf = d.createElement('script'), s = d.scripts[0];
+    wf.src = "/assets/bower_components/webfontloader/webfontloader.js";
+    s.parentNode.insertBefore(wf, s);
+  }(document));
+</script>
+<!--<![endif]-->
+
+<noscript>
+  
+  
+
+  
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Slab:700%7CNoto+Sans:400,400i,700,700i">
+    <style>
+      html { font-family: Noto Sans, Helvetica, Arial, sans-serif }
+      h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .heading { font-family: Roboto Slab, Helvetica, Arial, sans-serif }
+    </style>
+  
+
+  <link rel="stylesheet" href="/assets/icomoon/style.css">
+</noscript>
+
+<!--[if gt IE 8]><!---->
+
+
+
+  <link rel="stylesheet" href="/assets/css/hydejack-7.5.0.css">
+
+
+
+<style id="_pageStyle">
+
+.content a:not(.btn){color:#4fb1ba;border-color:rgba(79,177,186,0.2)}.content a:not(.btn):hover{border-color:#4fb1ba}:focus{outline-color:#4fb1ba}.btn-primary{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:focus,.btn-primary.focus{box-shadow:0 0 0 3px rgba(79,177,186,0.5)}.btn-primary:hover,.btn-primary.hover{color:#fff;background-color:#409ba3;border-color:#409ba3}.btn-primary:disabled,.btn-primary.disabled{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:active,.btn-primary.active{color:#fff;background-color:#409ba3;border-color:#409ba3}::selection{color:#fff;background:#4fb1ba}::-moz-selection{color:#fff;background:#4fb1ba}
+
+</style>
+
+<!--<![endif]-->
+
+
+
+
+</head>
+
+<body>
+  <div class="navbar fixed-top">
+  <div class="content">
+    <div class="nav-btn-bar">
+      <span class="sr-only">Jump to:</span>
+      <a id="_menu" class="nav-btn no-hover" href="#_navigation">
+        <span class="sr-only">Navigation</span>
+        <span class="icon-menu"></span>
+      </a>
+    </div>
+  </div>
+</div>
+
+
+<hy-push-state>
+  <main
+    id="_main"
+    class="content fade-in layout-post"
+    role="main"
+    data-color="#4fb1ba"
+    data-theme-color=""
+    
+      data-image="/assets/img/sidebar-bg.jpg"
+      data-overlay
+    
+    >
+    
+
+
+<article id="post-dogfooding-ns-2" class="page post" role="article">
+  <header>
+    <h1 class="post-title">
+      
+        Dogfooding .NET Standard 2.0 latest build
+      
+    </h1>
+
+    <p class="post-date heading">
+      
+      <time datetime="2017-03-18T00:00:00-07:00">18 Mar 2017</time>
+      
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+in <span>C#</span> / <span>Interop</span> / <span>Netcore</span>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+    </p>
+
+    
+
+
+
+  
+    <p class="message" >
+      Walk through steps to dogfood netstandard 2.0 with a sample using ICustomMarshaler
+
+    </p>
+  
+
+
+  </header>
+
+  
+    <p>If you’ve been following .NET Core development you’ve probably already heard about .NET Standard 2.0. We are bringing back a lot of APIs from desktop to .NET Core to make migrating existing apps easier. If you’d like to read more about what is netstandard, you can refer to this <a href="https://github.com/dotnet/standard/blob/master/docs/faq.md">faq</a>. In this post I’m going to show you how to dogfood (read: try out the bleeding edge new stuff) the latest .NET Core 2.0 which has the latest API changes in .NET Standard 2.0.</p>
+
+<p>First, download one of the tarballs from below:</p>
+
+<ul>
+  <li><a href="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-dev-win-x64.latest.zip">Win 64-bit Latest Zip</a> <a href="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-dev-win-x64.latest.exe">Installer</a></li>
+  <li><a href="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-dev-osx-x64.latest.tar.gz">macOS 64-bit Latest Tar</a> <a href="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/master/dotnet-dev-osx-x64.latest.pkg">Installer</a></li>
+  <li><a href="https://github.com/dotnet/cli/blob/master/README.md#installers-and-binaries">Others</a></li>
+</ul>
+
+<p>If you use the installer, it will overwrite your existing .NET Core installation, which is probably not what you want. The easier way is to simply extract it. Here I’ve downloaded the macOS 64-bit version, and extracted it to ~/dotnet-dev-osx-x64.latest.</p>
+
+<p>You’ll quickly notice that the folder has dotnet, a SDK folder containing tools (for example, Roslyn compiler <code class="highlighter-rouge">sdk/2.0.0-preview1-005448/Roslyn/csc.exe</code>), a shared folder containing the runtime (<code class="highlighter-rouge">shared/Microsoft.NETCore.App/2.0.0-beta-001776-00/libcoreclr.dylib</code>) and implementation assemblies, etc. To confirm that you’ve downloaded the correct tools, just run:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>yizhang@yzha-mbp:~/var/ns2$ ~/dotnet-dev-osx-x64.latest/dotnet --version
+2.0.0-preview1-005448
+</code></pre></div></div>
+
+<p>You should see 2.0.0-*.</p>
+
+<p>To try out the new APIs, you need to first create a new project using the console application template:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>yizhang@yzha-mbp:~/var/ns2$ ~/dotnet-dev-osx-x64.latest/dotnet new console
+Content generation time: 49.1374 ms
+The template "Console Application" created successfully.
+</code></pre></div></div>
+
+<p>One of the new API we’ve bought back is System.Runtime.InteropServices.ICustomMarshal. Well, I’m a bit biased since I’ve spent most of my career working with .NET interop. To try this out, I’ve copy/pasted some code from Mono.Posix (and removed some dependencies), and it just worked:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+
+<span class="k">using</span> <span class="nn">System.Runtime.InteropServices</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Unsafe</span>
+<span class="p">{</span>
+    <span class="k">class</span> <span class="nc">StringMarshaler</span> <span class="p">:</span> <span class="n">ICustomMarshaler</span> <span class="p">{</span>
+
+        <span class="k">private</span> <span class="k">static</span> <span class="n">StringMarshaler</span> <span class="n">Instance</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">StringMarshaler</span> <span class="p">();</span>
+
+        <span class="k">public</span> <span class="k">static</span> <span class="n">ICustomMarshaler</span> <span class="nf">GetInstance</span> <span class="p">(</span><span class="kt">string</span> <span class="n">s</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="n">Instance</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">CleanUpManagedData</span> <span class="p">(</span><span class="kt">object</span> <span class="n">o</span><span class="p">)</span>
+        <span class="p">{</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">CleanUpNativeData</span> <span class="p">(</span><span class="n">IntPtr</span> <span class="n">pNativeData</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">Marshal</span><span class="p">.</span><span class="nf">FreeCoTaskMem</span><span class="p">(</span><span class="n">pNativeData</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetNativeDataSize</span> <span class="p">()</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="n">IntPtr</span><span class="p">.</span><span class="n">Size</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="n">IntPtr</span> <span class="nf">MarshalManagedToNative</span> <span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">string</span> <span class="n">s</span> <span class="p">=</span> <span class="n">obj</span> <span class="k">as</span> <span class="kt">string</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">IntPtr</span><span class="p">.</span><span class="n">Zero</span><span class="p">;</span>
+            <span class="n">IntPtr</span> <span class="n">p</span> <span class="p">=</span> <span class="n">Marshal</span><span class="p">.</span><span class="nf">StringToCoTaskMemAnsi</span><span class="p">(</span><span class="n">s</span><span class="p">);</span>
+            <span class="k">return</span> <span class="n">p</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="kt">object</span> <span class="nf">MarshalNativeToManaged</span> <span class="p">(</span><span class="n">IntPtr</span> <span class="n">pNativeData</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">string</span> <span class="n">s</span> <span class="p">=</span> <span class="n">Marshal</span><span class="p">.</span><span class="nf">PtrToStringAnsi</span><span class="p">(</span><span class="n">pNativeData</span><span class="p">);</span>
+            <span class="k">return</span> <span class="n">s</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="p">[</span><span class="nf">DllImport</span> <span class="p">(</span><span class="s">"libc"</span><span class="p">,</span> <span class="n">EntryPoint</span><span class="p">=</span><span class="s">"mkdir"</span><span class="p">,</span> <span class="n">SetLastError</span><span class="p">=</span><span class="k">true</span><span class="p">)]</span>
+    <span class="k">internal</span> <span class="k">extern</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">syscall_mkdir</span> <span class="p">([</span><span class="nf">MarshalAs</span><span class="p">(</span><span class="n">UnmanagedType</span><span class="p">.</span><span class="n">CustomMarshaler</span><span class="p">,</span> <span class="n">MarshalTypeRef</span><span class="p">=</span><span class="k">typeof</span><span class="p">(</span><span class="n">StringMarshaler</span><span class="p">))]</span> <span class="kt">string</span> <span class="n">pathname</span><span class="p">,</span> <span class="kt">int</span> <span class="n">mode</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">Program</span>
+<span class="p">{</span>
+    <span class="k">static</span> <span class="k">void</span> <span class="nf">Main</span><span class="p">(</span><span class="kt">string</span><span class="p">[]</span> <span class="n">args</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">Unsafe</span><span class="p">.</span><span class="nf">syscall_mkdir</span><span class="p">(</span><span class="s">"test"</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+        <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"test directory created"</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This program simply uses a custom marshaler that marshal a string to UTF-8 using Marshal.StringToCoTaskMemAnsi. It’s a bit overkill since string is marshaled as UTF-8 by default, but this is a demo to show the new API - you got the idea.</p>
+
+<p>Now do a <code class="highlighter-rouge">~/dotnet-dev-osx-x64.latest/dotnet restore</code> then <code class="highlighter-rouge">~/dotnet-dev-osx-x64.latest/dotnet run</code>. And see the new directory getting created.</p>
+
+
+  
+</article>
+
+
+<hr class="dingbat related" />
+
+
+
+
+  
+     
+
+
+  <aside class="about related mt4 mb4" role="complementary">
+    
+    
+
+<div class="author mt4">
+  
+
+  
+    
+    
+<img class="avatar" src="https://avatars1.githubusercontent.com/yizhang82?v=3&s=128" alt="yizhang82" srcset="https://avatars1.githubusercontent.com/yizhang82?v=3&s=128 1x, https://avatars1.githubusercontent.com/yizhang82?v=3&s=256 2x, https://avatars1.githubusercontent.com/yizhang82?v=3&s=384 3x, https://avatars1.githubusercontent.com/yizhang82?v=3&s=512 4x" width="128" height="128" data-proofer-ignore="true" />
+
+  
+
+  
+  
+  <h2  class="page-title hr">
+    About
+  </h2>
+
+  <p>Principal Software Engineer working on Windows Azure focusing on transactional data programming and storage solution across multiple languages. Previously worked in .NET / CLR team for ~10 years on full .NET, .NET Core, and .NET Native. Amature piano player, passionate gamer, and proud dad.</p>
+
+
+  <div class="sidebar-social">
+    <span class="sr-only">Social:</span>
+<ul>
+  
+
+  
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://twitter.com/yizhang82" title="Twitter" class="no-mark-external">
+    <span class="icon-twitter"></span>
+    <span class="sr-only">Twitter</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://github.com/yizhang82" title="GitHub" class="no-mark-external">
+    <span class="icon-github"></span>
+    <span class="sr-only">GitHub</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="mailto:mail@yizhang82.me" title="Email" class="no-mark-external">
+    <span class="icon-mail"></span>
+    <span class="sr-only">Email</span>
+  </a>
+</li>
+
+  
+</ul>
+
+  </div>
+</div>
+
+  </aside>
+
+
+  
+
+  
+  
+
+  
+    
+
+
+
+
+<aside class="related mb4" role="complementary">
+  <h2 class="hr">Related Posts</h2>
+
+  <ul class="related-posts">
+    
+      
+
+
+<li>
+  <a href="/dependent-handle" class="h4 flip-title">
+    <span>Top secret .NET handles - Part 1 - Dependent handles</span>
+  </a>
+  <time class="heading faded fine" datetime="2018-01-24T00:00:00-08:00">24 Jan 2018</time>
+</li>
+
+    
+      
+
+
+<li>
+  <a href="/dotnet-generics-sharing" class="h4 flip-title">
+    <span>Sharing .NET generic code under the hood</span>
+  </a>
+  <time class="heading faded fine" datetime="2017-03-31T00:00:00-07:00">31 Mar 2017</time>
+</li>
+
+    
+      
+
+
+<li>
+  <a href="/value-type-boxing" class="h4 flip-title">
+    <span>C# value type boxing under the hood</span>
+  </a>
+  <time class="heading faded fine" datetime="2017-03-19T00:00:00-07:00">19 Mar 2017</time>
+</li>
+
+    
+  </ul>
+</aside>
+
+
+  
+
+
+    
+
+<aside class="comments related" role="complementary">
+  <h2 class="hr">Comments</h2>
+  <div id="disqus_thread"></div>
+  <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+</aside>
+
+
+    <footer role="contentinfo">
+  <hr/>
+  
+    <p><small class="copyright">© 2017. All rights reserved.
+</small></p>
+  
+  
+  <p><small>Powered by <a class="external" href="https://qwtel.com/hydejack/">Hydejack</a> v<span id="_version">7.5.0</span></small></p>
+  <hr class="sr-only"/>
+</footer>
+
+  </main>
+  <hy-drawer>
+  <header id="_sidebar" class="sidebar" role="banner">
+    
+    <div class="sidebar-bg sidebar-overlay" style="background-color:#4fb1ba;background-image:url(/assets/img/sidebar-bg.jpg)"></div>
+
+    <div class="sidebar-sticky">
+      <div class="sidebar-about">
+        <h2 class="h1"><a href="/">yizhang82's blog</a></h2>
+        
+        
+          <p class="">
+            Languages, Runtime, Data structures, Databases, and everything in between
+
+          </p>
+        
+      </div>
+
+      <nav class="sidebar-nav heading" role="navigation">
+        <span class="sr-only">Navigation:</span>
+<ul>
+  
+  
+  
+  
+    
+      <li>
+        <a
+          id="_navigation"
+          href="/tag/hyde/"
+          class="sidebar-nav-item"
+          
+          >
+          Hyde
+        </a>
+      </li>
+    
+  
+    
+      <li>
+        <a
+          
+          href="/tag/hydejack/"
+          class="sidebar-nav-item"
+          
+          >
+          Hydejack
+        </a>
+      </li>
+    
+  
+    
+      <li>
+        <a
+          
+          href="/docs/7.5.0/"
+          class="sidebar-nav-item"
+          
+          >
+          Documentation
+        </a>
+      </li>
+    
+  
+</ul>
+
+      </nav>
+
+      
+
+      <div class="sidebar-social">
+        <span class="sr-only">Social:</span>
+<ul>
+  
+
+  
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://twitter.com/yizhang82" title="Twitter" class="no-mark-external">
+    <span class="icon-twitter"></span>
+    <span class="sr-only">Twitter</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://github.com/yizhang82" title="GitHub" class="no-mark-external">
+    <span class="icon-github"></span>
+    <span class="sr-only">GitHub</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="mailto:mail@yizhang82.me" title="Email" class="no-mark-external">
+    <span class="icon-mail"></span>
+    <span class="sr-only">Email</span>
+  </a>
+</li>
+
+  
+</ul>
+
+      </div>
+    </div>
+  </header>
+</hy-drawer>
+
+</hy-push-state>
+
+
+  
+
+  <!--[if gt IE 9]><!---->
+  
+  <script>loadJSDeferred('/assets/js/hydejack-7.5.0.js');</script>
+  
+  <!--<![endif]-->
+
+
+
+  
+<hr class="sr-only"/>
+<h2 class="sr-only">Templates (for web app):</h2>
+
+<template id="_animation-template">
+  <div class="animation-main fixed-top">
+    <div class="content">
+      <div class="page"></div>
+    </div>
+  </div>
+</template>
+
+<template id="_loading-template">
+  <div class="loading">
+    <span class="sr-only">Loading…</span>
+    <span class="icon-cog"></span>
+  </div>
+</template>
+
+<template id="_error-template">
+  <div class="page">
+    <h1 class="page-title">Error</h1>
+    
+    
+    <p class="lead">
+      Sorry, an error occurred while loading <a class="this-link" href=""></a>.
+
+    </p>
+  </div>
+</template>
+
+<template id="_back-template">
+  <a id="_back" class="back nav-btn no-hover">
+    <span class="sr-only">Back</span>
+    <span class="icon-arrow-left2"></span>
+  </a>
+</template>
+
+<template id="_permalink-template">
+  <a href="#" class="permalink">
+    <span class="sr-only">Permalink</span>
+    <span class="icon-link"></span>
+  </a>
+</template>
+
+
+
+</body>
+</html>

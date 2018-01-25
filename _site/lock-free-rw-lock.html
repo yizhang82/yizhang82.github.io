@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en"><!--
+ __  __                __                                     __
+/\ \/\ \              /\ \             __                    /\ \
+\ \ \_\ \   __  __    \_\ \      __   /\_\      __       ___ \ \ \/'\
+ \ \  _  \ /\ \/\ \   /'_` \   /'__`\ \/\ \   /'__`\    /'___\\ \ , <
+  \ \ \ \ \\ \ \_\ \ /\ \L\ \ /\  __/  \ \ \ /\ \L\.\_ /\ \__/ \ \ \\`\
+   \ \_\ \_\\/`____ \\ \___,_\\ \____\ _\ \ \\ \__/.\_\\ \____\ \ \_\ \_\
+    \/_/\/_/ `/___/> \\/__,_ / \/____//\ \_\ \\/__/\/_/ \/____/  \/_/\/_/
+                /\___/                \ \____/
+                \/__/                  \/___/
+
+Powered by Hydejack v7.5.0 <https://qwtel.com/hydejack/>
+-->
+
+
+
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+
+  
+<!-- Begin Jekyll SEO tag v2.3.0 -->
+<title>Writing a portable lock-free reader/writer lock | yizhang82’s blog</title>
+<meta property="og:title" content="Writing a portable lock-free reader/writer lock" />
+<meta name="author" content="Yi Zhang" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="A portable C++ reader/writer lock implementation without using locks" />
+<meta property="og:description" content="A portable C++ reader/writer lock implementation without using locks" />
+<link rel="canonical" href="http://localhost:4000/lock-free-rw-lock" />
+<meta property="og:url" content="http://localhost:4000/lock-free-rw-lock" />
+<meta property="og:site_name" content="yizhang82’s blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2017-10-05T00:00:00-07:00" />
+<script type="application/ld+json">
+{"name":null,"description":"A portable C++ reader/writer lock implementation without using locks","author":{"@type":"Person","name":"Yi Zhang"},"@type":"BlogPosting","url":"http://localhost:4000/lock-free-rw-lock","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/icons/icon.png"},"name":"Yi Zhang"},"image":null,"headline":"Writing a portable lock-free reader/writer lock","dateModified":"2017-10-05T00:00:00-07:00","datePublished":"2017-10-05T00:00:00-07:00","sameAs":null,"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/lock-free-rw-lock"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+  
+    <meta name="keywords" content="">
+  
+
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="yizhang82's blog">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<meta name="application-name" content="yizhang82's blog">
+<meta name="msapplication-config" content="/assets/ieconfig.xml">
+
+
+<meta name="theme-color" content="#4fb1ba">
+
+
+<meta name="generator" content="Hydejack v7.5.0">
+
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="yizhang82's blog" />
+
+
+
+<link rel="alternate" href="http://localhost:4000/lock-free-rw-lock" hreflang="en">
+
+<link rel="shortcut icon" href="/assets/icons/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icons/icon.png">
+
+<link rel="manifest" href="/assets/manifest.json">
+
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+
+
+
+
+<link id="_disqusJS" rel="dns-prefetch" href="https://yizhang82.disqus.com/embed.js">
+
+
+
+<link id="_katexJS"  rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.js">
+<link id="_katexCSS" rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.css">
+
+<script>
+  function stdOnEnd(n,e){n.onload=function(){this.onerror=this.onload=null,e(null,n)},n.onerror=function(){this.onerror=this.onload=null,e(new Error("Failed to load "+this.src),n)}}function ieOnEnd(n,e){n.onreadystatechange=function(){"complete"!=this.readyState&&"loaded"!=this.readyState||(this.onreadystatechange=null,e(null,n))}}window.setRelStylesheet=function(n){function e(){this.rel="stylesheet"}var o=document.getElementById(n);o.addEventListener?o.addEventListener("load",e,!1):o.onload=e},window._loaded=!1,window.loadJSDeferred=function(n,e){function o(){window._loaded=!0;var o=document.createElement("script");o.src=n,e&&(("onload"in o?stdOnEnd:ieOnEnd)(o,e),o.onload||stdOnEnd(o,e));var t=document.scripts[0];t.parentNode.insertBefore(o,t)}window._loaded?o():window.addEventListener?window.addEventListener("load",o,!1):window.onload=o};
+!function(a){"use strict";var b=function(b,c,d){function e(a){return h.body?a():void setTimeout(function(){e(a)})}function f(){i.addEventListener&&i.removeEventListener("load",f),i.media=d||"all"}var g,h=a.document,i=h.createElement("link");if(c)g=c;else{var j=(h.body||h.getElementsByTagName("head")[0]).childNodes;g=j[j.length-1]}var k=h.styleSheets;i.rel="stylesheet",i.href=b,i.media="only x",e(function(){g.parentNode.insertBefore(i,c?g:g.nextSibling)});var l=function(a){for(var b=i.href,c=k.length;c--;)if(k[c].href===b)return a();setTimeout(function(){l(a)})};return i.addEventListener&&i.addEventListener("load",f),i.onloadcssdefined=l,l(f),i};"undefined"!=typeof exports?exports.loadCSS=b:a.loadCSS=b}("undefined"!=typeof global?global:this);
+!function(a){if(a.loadCSS){var b=loadCSS.relpreload={};if(b.support=function(){try{return a.document.createElement("link").relList.supports("preload")}catch(b){return!1}},b.poly=function(){for(var b=a.document.getElementsByTagName("link"),c=0;c<b.length;c++){var d=b[c];"preload"===d.rel&&"style"===d.getAttribute("as")&&(a.loadCSS(d.href,d,d.getAttribute("media")),d.rel=null)}},!b.support()){b.poly();var c=a.setInterval(b.poly,300);a.addEventListener&&a.addEventListener("load",function(){b.poly(),a.clearInterval(c)}),a.attachEvent&&a.attachEvent("onload",function(){a.clearInterval(c)})}}}(this);
+
+  window._noPushState = false;
+  window._noDrawer = false;
+</script>
+
+<!--[if gt IE 8]><!---->
+
+
+<script>
+  WebFontConfig = {
+    
+    google: {
+      families: ['Roboto+Slab:700','Noto+Sans:400,400i,700,700i']
+    },
+    
+
+    custom: {
+      families: ['icomoon'],
+      urls: ['/assets/icomoon/style.css']
+    }
+  };
+  (function(d) {
+    var wf = d.createElement('script'), s = d.scripts[0];
+    wf.src = "/assets/bower_components/webfontloader/webfontloader.js";
+    s.parentNode.insertBefore(wf, s);
+  }(document));
+</script>
+<!--<![endif]-->
+
+<noscript>
+  
+  
+
+  
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Slab:700%7CNoto+Sans:400,400i,700,700i">
+    <style>
+      html { font-family: Noto Sans, Helvetica, Arial, sans-serif }
+      h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .heading { font-family: Roboto Slab, Helvetica, Arial, sans-serif }
+    </style>
+  
+
+  <link rel="stylesheet" href="/assets/icomoon/style.css">
+</noscript>
+
+<!--[if gt IE 8]><!---->
+
+
+
+  <link rel="stylesheet" href="/assets/css/hydejack-7.5.0.css">
+
+
+
+<style id="_pageStyle">
+
+.content a:not(.btn){color:#4fb1ba;border-color:rgba(79,177,186,0.2)}.content a:not(.btn):hover{border-color:#4fb1ba}:focus{outline-color:#4fb1ba}.btn-primary{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:focus,.btn-primary.focus{box-shadow:0 0 0 3px rgba(79,177,186,0.5)}.btn-primary:hover,.btn-primary.hover{color:#fff;background-color:#409ba3;border-color:#409ba3}.btn-primary:disabled,.btn-primary.disabled{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:active,.btn-primary.active{color:#fff;background-color:#409ba3;border-color:#409ba3}::selection{color:#fff;background:#4fb1ba}::-moz-selection{color:#fff;background:#4fb1ba}
+
+</style>
+
+<!--<![endif]-->
+
+
+
+
+</head>
+
+<body>
+  <div class="navbar fixed-top">
+  <div class="content">
+    <div class="nav-btn-bar">
+      <span class="sr-only">Jump to:</span>
+      <a id="_menu" class="nav-btn no-hover" href="#_navigation">
+        <span class="sr-only">Navigation</span>
+        <span class="icon-menu"></span>
+      </a>
+    </div>
+  </div>
+</div>
+
+
+<hy-push-state>
+  <main
+    id="_main"
+    class="content fade-in layout-post"
+    role="main"
+    data-color="#4fb1ba"
+    data-theme-color=""
+    
+      data-image="/assets/img/sidebar-bg.jpg"
+      data-overlay
+    
+    >
+    
+
+
+<article id="post-rw-lock" class="page post" role="article">
+  <header>
+    <h1 class="post-title">
+      
+        Writing a portable lock-free reader/writer lock
+      
+    </h1>
+
+    <p class="post-date heading">
+      
+      <time datetime="2017-10-05T00:00:00-07:00">05 Oct 2017</time>
+      
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+in <span>C++</span> / <span>Lock</span>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+    </p>
+
+    
+
+
+
+  
+    <p class="message" >
+      A portable C++ reader/writer lock implementation without using locks
+
+    </p>
+  
+
+
+  </header>
+
+  
+    <p>It is sort of puzzling for me why C++ standard doesn’t have a implementation of reader/writer lock. So just like every other C++ developer, I’ve decided to roll my own.</p>
+
+<h2 id="getting-started">Getting started</h2>
+
+<p>A quick refresher if you haven’t looked at a reader/writer lock in a while. A reader/writer lock supports:</p>
+<ul>
+  <li>exclusive write operation - only one writer can modify the data at the same time</li>
+  <li>concurrent readers - there can be multiple readers reading the data at the same time</li>
+</ul>
+
+<p>It is great for operations where write is infrequent and performance of read operations are more important needs to have minimal overhead.</p>
+
+<h2 id="design-considerations">Design considerations</h2>
+
+<p>A typical implementation might be using semaphore / mutex, such as documented in <a href="https://en.wikipedia.org/wiki/Readers%E2%80%93writer_lock">wikipedia</a>. However, this has a major disadvantage that it requires entering a lock mutex every time a reader comes in, and this can be expensive as this usually leads to a kernel transition that are costly and can become a bottle neck when multiple readers are trying to access.</p>
+
+<p>If we think about this a bit more, we really have 3 states:</p>
+<ul>
+  <li>Free - any reader/writer can come in</li>
+  <li>One or more readers - no writer can come in</li>
+  <li>One writer - no one else can come in</li>
+</ul>
+
+<p>We can effectively use one unsigned integer count to represent these states:</p>
+<ul>
+  <li>Free - 0</li>
+  <li>Has a writer - 0xffffffff</li>
+  <li>Has one or more readers - reader count, &gt; 0</li>
+</ul>
+
+<p>The reason we are maintain the reader count (instead a bool whether there are readers), is to make it easier to track whether there are readers - we just need to increase the counter when a reader comes in, and decrease the counter when the reader leaves.</p>
+
+<p>The advatange of this approach is that we only need to atomicly operate on this count, without having to using lock to protect any region of code.</p>
+
+<p>Of course, the trick is to how to make it atomic without using any locks.</p>
+
+<h2 id="making-it-atomic">Making it atomic</h2>
+
+<p>In C++, std::atomic support an operation called <code class="highlighter-rouge">compare_exchange_weak/compare_exchange_strong</code>. This is the magic key to lock-free operation on the count. It tries to update a variable atomically if and only if the variable matches the expected value and then to the new value, atomically. This is important because another thread might be updating the value at the same time.</p>
+
+<p>Let’s use increasing the reader count as an example:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">int</span> <span class="n">retry</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="k">while</span> <span class="p">(</span><span class="nb">true</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// DO NOT worry about writer access for now - this is for demonstrating atomic operation only
+</span>
+    <span class="kt">int</span> <span class="n">prev_readers</span> <span class="o">=</span> <span class="n">_readers</span><span class="p">;</span>            <span class="c1">// current count
+</span>    <span class="kt">int</span> <span class="n">new_readers</span> <span class="o">=</span> <span class="n">prev_reader</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>      <span class="c1">// new count - note this is using the local value prev_readers 
+</span>                                            <span class="c1">// in case _readers has changed in between
+</span>    <span class="k">if</span> <span class="p">(</span><span class="n">_readers</span><span class="p">.</span><span class="n">compare_exchange_weak</span><span class="p">(</span><span class="n">prev_readers</span><span class="p">,</span> <span class="n">new_readers</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="c1">// we've won the race
+</span>        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// we've failed, retry
+</span>    <span class="n">retry</span><span class="o">++</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">retry</span> <span class="o">&gt;</span> <span class="n">RETRY_COUNT</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">retry</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">this_thread</span><span class="o">::</span><span class="n">yield</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>There are a few things to keep in mind:</p>
+
+<ul>
+  <li>
+    <p>We use a local variable to read off the current value and use that to calculate the new value. We can’t use the current value again to calculate the new value because the current value might have changed in between. The point here is to read _readers only once and keep that value for future access.</p>
+  </li>
+  <li>
+    <p>Once we obtain the current value into expected value and the new value, the goal of the current loop iteration is decided - it’ll update the _readers variable only if the value is expected value and then to the new value. For example, if the current value is <em>6</em>, the goal of the current iteration is to update <em>6</em> to <em>7</em>. If we use _readers to calculate the new value, it might become <em>8</em>.</p>
+  </li>
+  <li>
+    <p>We need to keep retry atomic update in case some other threads is also updating _readers. For example, if we decide to update _readers from 6 to 7, and another thread come in updated 6 to 7 (remember it is also doing the same thing), we need to retry again, and this time, our goal is to update it from 7 to 8. Rinse and repeat.</p>
+  </li>
+  <li>
+    <p>One important point in the retry: if we’ve failed multiple times, it is often a good idea to tell the OS thread scheduler “hey, I’ve tried many times, perhaps it is time to give other threads a chance to run”. This will both save power (busy loop makes the thread/core busy) and also let other threads in the system to preempt this thread. This is about being a good citizen and laptop users will appreciate it. The exact value of RETRY_COUNT is best found through extensive testing.</p>
+  </li>
+</ul>
+
+<p>One common question that people often ask is: what is the difference between <code class="highlighter-rouge">compare_exchange_weak</code> vs <code class="highlighter-rouge">compare_exchange_strong</code>? The difference between the two is that <code class="highlighter-rouge">compare_exchange_strong</code> avoids spurious failures due to underlying hardware consistency models (not due to race condition), while <code class="highlighter-rouge">compare_exchange_weak</code> might, but can have better performance in some platforms. If you are doing a loop, you are already prepared for failures due to race conditions, so you are already protected against failures in general, so in this case using <code class="highlighter-rouge">compare_exchange_weak</code> is a reasonable choice to get a bit better performance potentially in some platforms.</p>
+
+<h2 id="the-rw-lock-without-locks">The R/W lock without locks</h2>
+
+<p>OK. Now that we get the basic out of the way, it’s time to implement the real reader/writer lock. Let’s review the state transition:</p>
+
+<ul>
+  <li>For a writer
+    <ul>
+      <li>Taking a writer lock - from (FREE = 0) to (HAS_WRITERS = 0xffffffff)</li>
+      <li>Releasing a writer lock - from (HAS_WRITERS = 0xffffffff) to (FREE = 0)</li>
+    </ul>
+  </li>
+  <li>For a reader
+    <ul>
+      <li>Taking a reader lock - from (reader_count &gt;= 0) to (reader_count + 1)</li>
+      <li>Releasing a reader lock - from (reader_count &gt;= 0) to (reader_count - 1)</li>
+    </ul>
+  </li>
+</ul>
+
+<p>Let’s take <code class="highlighter-rouge">acquire_writer_lock</code> as an example:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">acquire_writer</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">retry</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">while</span> <span class="p">(</span><span class="nb">true</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">uint32_t</span> <span class="n">prev_readers</span> <span class="o">=</span> <span class="n">_readers</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">prev_readers</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">_readers</span><span class="p">.</span><span class="n">compare_exchange_weak</span><span class="p">(</span><span class="n">prev_readers</span><span class="p">,</span> <span class="n">HAS_WRITER</span><span class="p">))</span>
+            <span class="p">{</span>
+                <span class="c1">// we've won the race
+</span>                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">retry</span><span class="o">++</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">retry</span> <span class="o">&gt;</span> <span class="n">RETRY_THRESHOLD</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c1">// save some cpu cycles
+</span>            <span class="n">retry</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="n">this_thread</span><span class="o">::</span><span class="n">yield</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This is very similar to what we had earlier, the only difference is the transition from 0 to HAS_WRITER.</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">acquire_reader</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">retry</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">while</span> <span class="p">(</span><span class="nb">true</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">uint32_t</span> <span class="n">prev_readers</span> <span class="o">=</span> <span class="n">_readers</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">prev_readers</span> <span class="o">!=</span> <span class="n">HAS_WRITER</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="kt">uint32_t</span> <span class="n">new_readers</span> <span class="o">=</span> <span class="n">prev_readers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">_readers</span><span class="p">.</span><span class="n">compare_exchange_weak</span><span class="p">(</span><span class="n">prev_readers</span><span class="p">,</span> <span class="n">new_readers</span><span class="p">))</span>
+            <span class="p">{</span>
+                <span class="c1">// we've won the race
+</span>                <span class="k">return</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="n">retry</span><span class="o">++</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">retry</span> <span class="o">&gt;</span> <span class="n">RETRY_THRESHOLD</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">retry</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="n">this_thread</span><span class="o">::</span><span class="n">yield</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">acquire_reader</code> is also very similiar. The difference is the check for HAS_WRITER - if there is a writer in progress, there is no point increasing the reader count</p>
+
+<p>And to wrap it up, just like any other serious C++ programmer, we also need to add a holder for taking/releasing the lock, following the RAII pattern (assuming the class we have earlier is called rw_spin_lock).</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">writer_lock</span>
+<span class="p">{</span>
+<span class="k">public</span><span class="o">:</span>
+    <span class="n">writer_lock</span><span class="p">(</span><span class="n">rw_spin_lock</span> <span class="o">&amp;</span><span class="n">lock</span><span class="p">)</span> <span class="o">:</span> <span class="n">_lock</span><span class="p">(</span><span class="n">lock</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">_lock</span><span class="p">.</span><span class="n">acquire_writer</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="o">~</span><span class="n">writer_lock</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="n">_lock</span><span class="p">.</span><span class="n">release_writer</span><span class="p">();</span>
+    <span class="p">}</span>
+
+<span class="k">private</span><span class="o">:</span>
+    <span class="n">rw_spin_lock</span> <span class="o">&amp;</span><span class="n">_lock</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<p>You can find the entire code in github <a href="https://gist.github.com/yizhang82/500da684837161055978011c5850d296#file-rw_spin_lock-h">here</a></p>
+
+<p>Hope this helps.</p>
+
+  
+</article>
+
+
+<hr class="dingbat related" />
+
+
+
+
+  
+     
+
+
+  <aside class="about related mt4 mb4" role="complementary">
+    
+    
+
+<div class="author mt4">
+  
+
+  
+    
+    
+<img class="avatar" src="https://avatars1.githubusercontent.com/yizhang82?v=3&s=128" alt="yizhang82" srcset="https://avatars1.githubusercontent.com/yizhang82?v=3&s=128 1x, https://avatars1.githubusercontent.com/yizhang82?v=3&s=256 2x, https://avatars1.githubusercontent.com/yizhang82?v=3&s=384 3x, https://avatars1.githubusercontent.com/yizhang82?v=3&s=512 4x" width="128" height="128" data-proofer-ignore="true" />
+
+  
+
+  
+  
+  <h2  class="page-title hr">
+    About
+  </h2>
+
+  <p>Principal Software Engineer working on Windows Azure focusing on transactional data programming and storage solution across multiple languages. Previously worked in .NET / CLR team for ~10 years on full .NET, .NET Core, and .NET Native. Amature piano player, passionate gamer, and proud dad.</p>
+
+
+  <div class="sidebar-social">
+    <span class="sr-only">Social:</span>
+<ul>
+  
+
+  
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://twitter.com/yizhang82" title="Twitter" class="no-mark-external">
+    <span class="icon-twitter"></span>
+    <span class="sr-only">Twitter</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://github.com/yizhang82" title="GitHub" class="no-mark-external">
+    <span class="icon-github"></span>
+    <span class="sr-only">GitHub</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="mailto:mail@yizhang82.me" title="Email" class="no-mark-external">
+    <span class="icon-mail"></span>
+    <span class="sr-only">Email</span>
+  </a>
+</li>
+
+  
+</ul>
+
+  </div>
+</div>
+
+  </aside>
+
+
+  
+
+  
+  
+
+  
+    
+
+
+
+
+<aside class="related mb4" role="complementary">
+  <h2 class="hr">Related Posts</h2>
+
+  <ul class="related-posts">
+    
+      
+
+
+<li>
+  <a href="/cpp-coroutines-async-fibonacci" class="h4 flip-title">
+    <span>C++ coroutine tutorial - computing fibonacci using C++ coroutines</span>
+  </a>
+  <time class="heading faded fine" datetime="2017-10-27T00:00:00-07:00">27 Oct 2017</time>
+</li>
+
+    
+      
+
+
+<li>
+  <a href="/cpp-coroutines-basic-concepts" class="h4 flip-title">
+    <span>Writing your own C++ coroutines: getting started</span>
+  </a>
+  <time class="heading faded fine" datetime="2017-10-05T00:00:00-07:00">05 Oct 2017</time>
+</li>
+
+    
+  </ul>
+</aside>
+
+
+  
+
+
+    
+
+<aside class="comments related" role="complementary">
+  <h2 class="hr">Comments</h2>
+  <div id="disqus_thread"></div>
+  <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+</aside>
+
+
+    <footer role="contentinfo">
+  <hr/>
+  
+    <p><small class="copyright">© 2017. All rights reserved.
+</small></p>
+  
+  
+  <p><small>Powered by <a class="external" href="https://qwtel.com/hydejack/">Hydejack</a> v<span id="_version">7.5.0</span></small></p>
+  <hr class="sr-only"/>
+</footer>
+
+  </main>
+  <hy-drawer>
+  <header id="_sidebar" class="sidebar" role="banner">
+    
+    <div class="sidebar-bg sidebar-overlay" style="background-color:#4fb1ba;background-image:url(/assets/img/sidebar-bg.jpg)"></div>
+
+    <div class="sidebar-sticky">
+      <div class="sidebar-about">
+        <h2 class="h1"><a href="/">yizhang82's blog</a></h2>
+        
+        
+          <p class="">
+            Languages, Runtime, Data structures, Databases, and everything in between
+
+          </p>
+        
+      </div>
+
+      <nav class="sidebar-nav heading" role="navigation">
+        <span class="sr-only">Navigation:</span>
+<ul>
+  
+  
+  
+  
+    
+      <li>
+        <a
+          id="_navigation"
+          href="/tag/hyde/"
+          class="sidebar-nav-item"
+          
+          >
+          Hyde
+        </a>
+      </li>
+    
+  
+    
+      <li>
+        <a
+          
+          href="/tag/hydejack/"
+          class="sidebar-nav-item"
+          
+          >
+          Hydejack
+        </a>
+      </li>
+    
+  
+    
+      <li>
+        <a
+          
+          href="/docs/7.5.0/"
+          class="sidebar-nav-item"
+          
+          >
+          Documentation
+        </a>
+      </li>
+    
+  
+</ul>
+
+      </nav>
+
+      
+
+      <div class="sidebar-social">
+        <span class="sr-only">Social:</span>
+<ul>
+  
+
+  
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://twitter.com/yizhang82" title="Twitter" class="no-mark-external">
+    <span class="icon-twitter"></span>
+    <span class="sr-only">Twitter</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://github.com/yizhang82" title="GitHub" class="no-mark-external">
+    <span class="icon-github"></span>
+    <span class="sr-only">GitHub</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="mailto:mail@yizhang82.me" title="Email" class="no-mark-external">
+    <span class="icon-mail"></span>
+    <span class="sr-only">Email</span>
+  </a>
+</li>
+
+  
+</ul>
+
+      </div>
+    </div>
+  </header>
+</hy-drawer>
+
+</hy-push-state>
+
+
+  
+
+  <!--[if gt IE 9]><!---->
+  
+  <script>loadJSDeferred('/assets/js/hydejack-7.5.0.js');</script>
+  
+  <!--<![endif]-->
+
+
+
+  
+<hr class="sr-only"/>
+<h2 class="sr-only">Templates (for web app):</h2>
+
+<template id="_animation-template">
+  <div class="animation-main fixed-top">
+    <div class="content">
+      <div class="page"></div>
+    </div>
+  </div>
+</template>
+
+<template id="_loading-template">
+  <div class="loading">
+    <span class="sr-only">Loading…</span>
+    <span class="icon-cog"></span>
+  </div>
+</template>
+
+<template id="_error-template">
+  <div class="page">
+    <h1 class="page-title">Error</h1>
+    
+    
+    <p class="lead">
+      Sorry, an error occurred while loading <a class="this-link" href=""></a>.
+
+    </p>
+  </div>
+</template>
+
+<template id="_back-template">
+  <a id="_back" class="back nav-btn no-hover">
+    <span class="sr-only">Back</span>
+    <span class="icon-arrow-left2"></span>
+  </a>
+</template>
+
+<template id="_permalink-template">
+  <a href="#" class="permalink">
+    <span class="sr-only">Permalink</span>
+    <span class="icon-link"></span>
+  </a>
+</template>
+
+
+
+</body>
+</html>

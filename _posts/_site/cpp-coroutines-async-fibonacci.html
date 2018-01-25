@@ -1,0 +1,106 @@
+<p>I’ve been experimenting with coroutines recently and I found that information on C++ coroutines are very difficult to find. I’m planning to write a series of C++ coroutine blogs on how to use C++ coroutines, how they work, and how to write your own library that uses C++ coroutines. My last post <a href="http://yizhang82.me/cpp-coroutines-basic-concepts">Basic Concepts</a> are probably a bit too high-level and is not really meant for people who are new to C++ coroutines. So I’m going to start over with a simple C++ coroutine tutorial instead.</p>
+
+<h2 id="why-coroutines">Why coroutines</h2>
+
+<p>If you are coming from languages that have a concept of await, such as JavaScript, C#, etc. The concept of coroutines won’t be foreign to you - it is a way to write async programs in a serialized, imperative programming style, as if the async operations happen in parallel.</p>
+
+<p>There are other ways to write programs that author async operation. You fire the async operation, then go about doing other business, and at some point you’ll get a notification, which can be in the form of a callback, a event/notification/work, and one or the other you’ll run some “handler” code as a result of those callback/events.</p>
+
+<p>Needless to say, this complicates the programming logic quite a bit as now the code is scattered across the main function that fires the operation, as well the “handlers”. This will make your code looks like a giant state machine with code scatted all over the place (best case it looks like a huge switch/case over states). If you want to look for concrete examples, you might want to look at this (shameless plug) <a href="http://yizhang82.me/async-sqlite-as-promise">post</a> where I talk about wrapping async javascript callback code with promise and then await.</p>
+
+<p>The basic idea of coroutines (or await, if you prefer) is to hide the async nature of the code, and make sure the code is always executed in a serialized fashion. Whenever there is a async operation gets fired, the code automatically suspends the execution, and let other code take over by returning all the way to the out-most code that is not a coroutine (that is, doesn’t support suspension/resume), typically a event loop in current thread. This way, other code can take over the current thread and do other useful work, while your code waiting in suspense for the async operation to finish. Of course, if the operation happens fast enough or is simple enough, the async operation might return immediately so that the code and simply keep executing without suspension - but that’s an optimization. In pratice, the async operation is going to be either handled by OS, or somewhere in your own code in another thread, and takes a non-trivial amount of time (otherwise, why bother with async anyway?). When the async operation finishes, it signals the coroutine infrastructure its completion, and resumes the execution. Of course, there are a lot of details I’m omitting here, such as where do we resume (current thread where the async operation is done, or another thread, or the original thread where the suspension take place, etc), how the states (mostly variables in the stack) gets maintained across suspension/resume, etc. Those details are great candidates for a future post.</p>
+
+<p>As you can see, coroutine (or await) is obviously superior in terms of simplifying code and ease the burden of programmers, but it also comes with its cost of abstraction. C++ does a pretty good job of eliminate the abstraction cost whenever possible, but it doesn’t always do a perfect job. Either way, that is out of scope of this article.</p>
+
+<p>Also, please keep in mind that using coroutine or await doesn’t necessarily mean you’ll have good performance - it only helps you writing code in a natural serialized way for async operations (almost like you are running on one thread), but you still need to think about how to scale your program.</p>
+
+<h2 id="enough-talking-show-me-the-code">Enough talking. Show me the code</h2>
+
+<p>OK. I’m not going to bore you with the technical details (any more), and let’s jump straight into some sample code!</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">future</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">async_fib</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">co_return</span> <span class="mi">1</span><span class="p">;</span>
+
+    <span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+    <span class="c1">// iterate computing fib(n)
+</span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">co_await</span> <span class="n">async_add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">);</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">b</span><span class="p">;</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">c</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">co_return</span> <span class="n">b</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>As you can see, this code simply calculates fibonacci, and it’s not a very good one either (again, coroutine != performance). But it’s a good one to show some basic concepts:</p>
+
+<ul>
+  <li>A C++ coroutine (such as async_fib) returns a coroutine type.</li>
+</ul>
+
+<p>In this case, we are returning <a href="http://en.cppreference.com/w/cpp/thread/future"><code class="highlighter-rouge">std::future&lt;T&gt;</code></a>. This is a standard C++ library type. Unfortunately the default implementation in most compilers don’t support using future<T> as a coroutine type. VC++ has its own extension that adds coroutine support to std::future<T>. For the purpose of showing what coroutine is, we are going to assume `std::future<T>` has that support. To run this code, you'll need VC++.</T></T></T></p>
+
+<p>So what is a coroutine type anyway? It is a type that is aware of coroutines and implements a bunch of contracts required by C++ compilers. Most these contracts are (synchronous) callback that compiler will call when it’s about to suspend, to resume, to retrieve return value, to record exception, etc. Again, we’ll talk about details in future posts.</p>
+
+<ul>
+  <li>C++ coroutines uses <code class="highlighter-rouge">co_await</code> / <code class="highlighter-rouge">co_return</code> operators</li>
+</ul>
+
+<p>co_await operator means “fire this async operation, suspend my code (if necessary), and resume execution with the return value”. So in this case, when calling co_await async_add(a, b), it’ll let the “expensive” add operation happen in another thread, suspend the execution, and resume the c = asignment with return value, and proceed with next execution. The async operation itself needs to return a awaitable expression. But for now, let’s simplify this to say it has to return a coroutine type. Not quite correct, but for the purpose of this tutorial, this is good enough at the moment.</p>
+
+<p>co_return operator simply returns a return value to the coroutine, just like any other function. Note that for coroutines, you typically return the value type T in the coroutine type. In this case, the function signature returns <code class="highlighter-rouge">future&lt;int&gt;</code>, so you need to return int. <code class="highlighter-rouge">std::future&lt;int&gt;</code> here means : I promise I’ll give you a int value in the future when I’m done.</p>
+
+<h2 id="i-get-it-now-but-how-do-i-implement-an-async-operation-that-returns-a-coroutine-type">I get it now, but how do I implement an async operation that returns a coroutine type?</h2>
+
+<p>async_add is a good example:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">future</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">async_add</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">auto</span> <span class="n">fut</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">async</span><span class="p">([</span><span class="o">=</span><span class="p">]()</span> <span class="p">{</span>
+        <span class="kt">int</span> <span class="n">c</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">;</span>
+        <span class="k">return</span> <span class="n">c</span><span class="p">;</span>
+    <span class="p">});</span>
+
+    <span class="k">return</span> <span class="n">fut</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<ul>
+  <li>async_add returns a <code class="highlighter-rouge">future&lt;int&gt;</code> type (note that this is different than earlier - it actually returns the <em>correct</em> type!)</li>
+</ul>
+
+<p>This is effectively saying: I’m returning an object back to you, promising that I’ll give you an int when I’m done. That’s exactly what co_await operator needs.</p>
+
+<ul>
+  <li>The real operation is done inside std::async, which conveniently returns a future, that’ll resolve/complete when the async operation is finished. The async operation is running in another thread.</li>
+</ul>
+
+<h2 id="how-do-i-run-this-thing">How do I run this thing?</h2>
+
+<p>I’m testing this on VC++ on VS 2017 for now. In order to compile the code, you need to pass <code class="highlighter-rouge">/await</code> as a compiler switch:</p>
+
+<p><img src="/assets/images/coroutine-await-option.PNG" alt="Adding /Await Option" /></p>
+
+<p>For your convenience, I’ve shared the entire cpp file <a href="https://gist.github.com/yizhang82/28842f7dbae34b59fcd7b4d74b4a19d4#file-coroutine-simple-cpp">here</a></p>
+
+<p>If you want to use clang, you need to do a bit more work because most importantly <code class="highlighter-rouge">future&lt;T&gt;</code> isn’t a coroutine type there. I’ll have another post talk about how to run it in clang5.</p>
+
+<h2 id="whats-next">What’s next</h2>
+
+<p>OK. I’m going to stop here for now. A few things I’d planning to cover in the future (no pun intended):</p>
+
+<ul>
+  <li>How to augment <code class="highlighter-rouge">std::future&lt;T&gt;</code> to be a coroutine type, and running coroutines in clang 5</li>
+  <li>What’s an awaitable, and how to wrap your own async functions using your own awaitable</li>
+  <li>How to write your own version of <code class="highlighter-rouge">future&lt;T&gt;</code> - let’s call it <code class="highlighter-rouge">task&lt;T&gt;</code></li>
+  <li>Gory details - what does compiler codegen looks like, how suspension/resume works, some additional subtle issues to consider</li>
+</ul>
+
+<p>Hope this helps.</p>
+

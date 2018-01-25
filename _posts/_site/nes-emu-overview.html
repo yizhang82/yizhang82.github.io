@@ -1,0 +1,158 @@
+<p>I’ve recently wrote a <a href="https://en.wikipedia.org/wiki/Nintendo_Entertainment_System">NES</a> Emulator <a href="https://github.com/yizhang82/neschan">NesChan</a>. I had a lot of fun building this emulator and is planning to write a series of post documenting my experience and maybe help anyone who also want to write one. This is the first post.</p>
+
+<p><img src="/assets/images/neschan_mac.png" alt="NESChan mac version" /></p>
+
+<p>Many people growing up in the 80s probably have fond memory of playing 8-bit NES games - those games are surprisingly fun (and many of them challenging). Those 8-bit style games are also making a come back in indie games such as <a href="https://en.wikipedia.org/wiki/Shovel_Knight">Shovel Knight</a> and <a href="http://stardewvalley.net/">Stardew Valley</a>.</p>
+
+<p>This post is intended as a high-level overview of what it would take to write a NES emulator so that if you are interested to write your own you’d be prepared to know what is involved, or simply just to understand some of the interesting problems involved in writing one. More detailed technical writeup of emulating different components would come later as separate posts.</p>
+
+<h2 id="nes-hardware-capabilities">NES Hardware Capabilities</h2>
+
+<p>Being a 8-bit system in 80s, it has hilariously limited spec comparing to today’s standard:</p>
+
+<ul>
+  <li>
+    <p>8-bit 6502 CPU running at <em>1.79 MHZ</em>. It has <em>3</em> general purpose register A/X/Y, and <em>3</em> special register P (status) /SP (stack pointer) /PC (program counter, or instruction pointer), all of them being 8-bit except PC which is 16-bit.</p>
+  </li>
+  <li>
+    <p>16-bit addressable memory space. In theory it can address 64K memory however it only has <em>2KB</em> onboard RAM. Rest is either not wired up (and are mirrors of those 2KB), or mapped to special I/O registers, or catridge ROM/RAM space.</p>
+  </li>
+  <li>
+    <p>PPU (Picture Processing Unit) supporting rendering <em>256x240</em> screen composed of 8x8 tiles for background, up to 64 8x8 or 8x16 sprites for moving objects. It supports pixel-level scrolling (which is a big deal back in that day).</p>
+  </li>
+  <li>
+    <p>APU (Audio Processing Unit) supporting 2 pulse channel, 1 triangle channel, 1 noise channel, and 1 DMC (delta modulation) channel. One can still make good music with these - just not great sound effects.</p>
+  </li>
+  <li>
+    <p>Controllers - from classic NES controller to NES mouse.</p>
+  </li>
+  <li>
+    <p>Catridge boards (and mappers) - there are many <a href="http://wiki.nesdev.com/w/index.php/Cartridge_board_reference">different kinds</a> of game catridge boards. They come with game data as ROMsm, sometimes their own battery-backed RAM, or some cases, their own audio processing unit. Most importantly, they also come with special hardware, refered to as <a href="http://wiki.nesdev.com/w/index.php/Mapper">mappers</a>, that dynamically maps ROM/RAM into CPU and PPU memory space, bypassing the limitation of 16-bit address space. Some game catridge come with more than 256KB of CHR ROM and swap/map portion of it on demand.</p>
+  </li>
+</ul>
+
+<h2 id="before-your-start">Before your start</h2>
+
+<p>Assuming you haven’t done NES programming on a real NES hardware before, there are a bundance of material that covers NES hardware behavior.</p>
+
+<p>You need to have a good understanding of following topics:</p>
+
+<ul>
+  <li>CPU - instructions, addressing modes, registers and status flags, interrupts</li>
+  <li>PPU - PPU registers, pattern table, name table, sprites, rendering pipeline, and scrolling</li>
+  <li>APU - APU registers, and how to generate square/triangle waves.</li>
+  <li>iNES format - most games are in this format.</li>
+  <li>Controller - controller register</li>
+  <li>Mappers - how mappers controls memory mapping. Different mappers have different capabilities.</li>
+</ul>
+
+<p>It took me about a week and half to add CPU, PPU, and a few mappers in order to get some of the major commercial games to work perfectly (Super Contra, Super Mario Bros, Shadow of the Ninja, etc). If you want to support most of the games out there, prepare for a lot of work (implementing mappers and debugging). But most of those work are incremental and you can decide to stop at any time.</p>
+
+<h2 id="which-languageframework-to-pick">Which language/framework to pick</h2>
+
+<p>Language choice probably doesn’t matter that much. People have written NES emulators using all kinds of languages - C/C++, JavaScript, Go, C#, etc. Just pick your favorite language and go. It’s a 8-bit processor, so emulation performance on today’s powerful machines is usually not an issue. Just don’t go crazy creating new objects and trigger GC, if you are using a language that has one.</p>
+
+<p>Do find a good library for your language that supports rendering 2D graphics, controllers, and audio. You can choose a cross-platform one, or work with the OS specific libraries.</p>
+
+<p>For me I decided to go with C++, and <a href="https://www.libsdl.org/">SDL</a> for rendering/input/audio. This has nice benefit that everything is cross-platform by default.</p>
+
+<p>The core game engine is its own library and is agnostic about which framework your choose, and the main app uses SDL to provide the rendering/input/audio capabilities and can be swapped to use whatever technology/framework that is appropriate for the platform. For example, you can use a JavaScript framework in the browser to interact with the C++ game engine, and do the rendering / input entirely in the browser.</p>
+
+<h2 id="have-a-plan">Have a plan</h2>
+
+<p>Before you actually go write the emulator, it’ll be good to have a plan of attack - which component to emulate first and what to test, etc. It’s definitely not a good idea to run Super Mario Bro as your first test.</p>
+
+<p>This is the plan I went with.</p>
+
+<h3 id="1-start-from-cpu-first-and-make-sure-its-really-solid">1. Start from CPU first. And make sure it’s really solid.</h3>
+
+<p>Duh. You can’t do anything without CPU. Just go implement the instructions and the main loop - stick to the official instructions first. There are very few games use unofficial/undocumented instructions.</p>
+
+<h3 id="2-add-nes-rom-support-and-mapper-0">2. Add NES rom support (and mapper 0)</h3>
+
+<p>Why add ROM support before you can actually render anything to screen? You want to use <a href="http://wiki.nesdev.com/w/index.php/Emulator_tests">test roms</a> to make sure your CPU simulation is <em>really</em> good and squash bugs as early as possible. This will save you a ton of time.</p>
+
+<p>Trust me - you don’t want to find your CPU bugs in real games. And you’ll als catch your own regressions. Many ROMs would automatically write a success/fail code at a well known location - this can be your check/asserts, depending on what test framework you use.</p>
+
+<p>And eventually you’d want to load some games, right? :)</p>
+
+<p>If you find that some test ROM need unofficial instructions, add them as needed.</p>
+
+<h3 id="3-then-go-implement-your-ppu">3. Then go implement your PPU.</h3>
+
+<p>This is probably going to be fairly involved if not challenging. Even for experienced programmers, the PPU rendering pipeline takes quite a bit of time to wrap one’s head around. Due to memory constraints, the rendering tiles/sprites is completely 8x8 tile (block) based, and the way those tiles are represented in memory takes a bit getting used too (bitplanes, etc), and implementing the precise rendering pipeline has a lot of details.</p>
+
+<p>Don’t worry about rendering to screen yet. Just observe your VRAM and see with your inner eye to imagine.</p>
+
+<p>Don’t add scroll. That should be the next step.</p>
+
+<p>Now you can add the rendering and the main game loop. Make sure your game loop process as the exact cycle as the real hardware by doing some math over elapsed tick count and CPU MHZ.</p>
+
+<h3 id="4-go-try-some-simple-games">4. Go try some simple games</h3>
+
+<p>Try some games that don’t scroll and use mapper 0. Donkey Kong/Popeye/balloon fight are solid choices. You want to focus on those simple ones before you attempt your favorite games.</p>
+
+<h3 id="5-add-scrolling">5. Add scrolling</h3>
+
+<p>Scrolling is tricky because you need to locate the exact pixel within 8x8 tile, and you’ll also render one more tile if the X scroll isn’t a factor of 8. Go read the <a href="http://wiki.nesdev.com/w/index.php/PPU_scrolling">scrolling doc</a> and make sure all the interaction between PPU register, PPUADDR and scrolling parameters are done exactly right.</p>
+
+<h3 id="6-test-a-scrolling-game">6. Test a scrolling game</h3>
+
+<p>Ice Climber is a great choice for Y scroll. Horizontal scrolling games are trickier and should be tested in step 7.</p>
+
+<h3 id="7-try-out-super-mario-bros">7. Try out Super Mario Bros.</h3>
+
+<p>Once quite a few simple mapper 0 game work great, now it’s time to take your emulator to a real test. Super Mario Bros isn’t particularly tricky, but is quite demanding that your emulator should have a fairly complete CPU and PPU emulation with reasonable accuracy.</p>
+
+<h3 id="8-add-apu-support">8. Add APU support</h3>
+
+<p>I haven’t finished this one personally. Will update once I got it working. To get this to work you need to understand square waves, triangle waves, etc. Audio programming was black magic to me but I’m starting to get it.</p>
+
+<h3 id="9-add-more-mappers-mmc1-mmc3-etc">9. Add more mappers (MMC1, MMC3, etc)</h3>
+
+<p>More mappers = more games. In general the first few mappers are great candidates as it is supported by most games.</p>
+
+<h3 id="10-try-a-real-tricky-game-to-emulate">10. Try a real tricky game to emulate</h3>
+
+<p>Battletoads, if you are up for a challenge. Or there are <a href="http://wiki.nesdev.com/w/index.php/Tricky-to-emulate_games">more</a> to choose from.</p>
+
+<h3 id="11-add-fancy-features">11. Add fancy features</h3>
+
+<p>At this point, you should have many games working. Now you can decide what matter most to your emulator - there are a lot of things you can do now:</p>
+
+<ul>
+  <li>Add a debugger support</li>
+  <li>Add load/save state</li>
+  <li>Add reverse/forward</li>
+  <li>Add cheating support</li>
+  <li>Add more games and fix games</li>
+  <li>Add more test roms</li>
+  <li>…</li>
+</ul>
+
+<h2 id="when-things-go-wrong">When things go wrong</h2>
+
+<p>This is when things get really interesting (and frustrating).</p>
+
+<p>There are a few strategies that I found really helpful:</p>
+
+<ul>
+  <li>
+    <p>Use logs - your emulator should support writing diagnostic logs - including CPU instructions getting executed, what cycle is it at, scanline start/end, whether there is an interrupt, etc. In many cases comparing logs with your emulator and some other emulator would immediately identify the problem with CPU bugs, timing issues, freezes.</p>
+  </li>
+  <li>
+    <p>Compare with a excellent NES emulator with great debugger support. <a href="https://www.mesen.ca/">Mesen</a>’s excellent debugger makes debugging much easier. Debugging the code and observe what it does, compare the cycles, looking at memory, and tile/sprites data in PPU. This is extremely helpful.</p>
+  </li>
+  <li>
+    <p>If you have time, build your own debugger for your emulator. If you can directly see the contents of your sprites/background tiles represented in your own debugger window, you can easily see whether the problem is happening - is it a rendering bug (the data is correct), or the data simply isn’t there (most likely timing issue, CPU bug, or mappper bug).</p>
+  </li>
+</ul>
+
+<p>All in all,dDebugging is pretty painful, so avoid it if you can. This means having really good tests using the test roms and automate them. So that you can know if you made a regression after every build.</p>
+
+<h2 id="whats-next">What’s next</h2>
+
+<p>In my next post, I’m going to talk about how a emulator works when it comes up emulating multiple parallel executing hardware components. After that we’ll dive into details of how to emulate CPU/PPU, with real working code.</p>
+
+<p>You can find my emulator here in github - <a href="https://github.com/yizhang82/neschan">neschan</a>.</p>
+

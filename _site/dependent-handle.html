@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en"><!--
+ __  __                __                                     __
+/\ \/\ \              /\ \             __                    /\ \
+\ \ \_\ \   __  __    \_\ \      __   /\_\      __       ___ \ \ \/'\
+ \ \  _  \ /\ \/\ \   /'_` \   /'__`\ \/\ \   /'__`\    /'___\\ \ , <
+  \ \ \ \ \\ \ \_\ \ /\ \L\ \ /\  __/  \ \ \ /\ \L\.\_ /\ \__/ \ \ \\`\
+   \ \_\ \_\\/`____ \\ \___,_\\ \____\ _\ \ \\ \__/.\_\\ \____\ \ \_\ \_\
+    \/_/\/_/ `/___/> \\/__,_ / \/____//\ \_\ \\/__/\/_/ \/____/  \/_/\/_/
+                /\___/                \ \____/
+                \/__/                  \/___/
+
+Powered by Hydejack v7.5.0 <https://qwtel.com/hydejack/>
+-->
+
+
+
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+
+  
+<!-- Begin Jekyll SEO tag v2.3.0 -->
+<title>Top secret .NET handles - Part 1 - Dependent handles | yizhang82’s blog</title>
+<meta property="og:title" content="Top secret .NET handles - Part 1 - Dependent handles" />
+<meta name="author" content="Yi Zhang" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Top secret .NET handles - Part 1 - Dependent handles" />
+<meta property="og:description" content="Top secret .NET handles - Part 1 - Dependent handles" />
+<link rel="canonical" href="http://localhost:4000/dependent-handle" />
+<meta property="og:url" content="http://localhost:4000/dependent-handle" />
+<meta property="og:site_name" content="yizhang82’s blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-01-24T00:00:00-08:00" />
+<script type="application/ld+json">
+{"name":null,"description":"Top secret .NET handles - Part 1 - Dependent handles","author":{"@type":"Person","name":"Yi Zhang"},"@type":"BlogPosting","url":"http://localhost:4000/dependent-handle","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/icons/icon.png"},"name":"Yi Zhang"},"image":null,"headline":"Top secret .NET handles - Part 1 - Dependent handles","dateModified":"2018-01-24T00:00:00-08:00","datePublished":"2018-01-24T00:00:00-08:00","sameAs":null,"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/dependent-handle"},"@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+  
+    <meta name="keywords" content="">
+  
+
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="yizhang82's blog">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<meta name="application-name" content="yizhang82's blog">
+<meta name="msapplication-config" content="/assets/ieconfig.xml">
+
+
+<meta name="theme-color" content="#4fb1ba">
+
+
+<meta name="generator" content="Hydejack v7.5.0">
+
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="yizhang82's blog" />
+
+
+
+<link rel="alternate" href="http://localhost:4000/dependent-handle" hreflang="en">
+
+<link rel="shortcut icon" href="/assets/icons/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icons/icon.png">
+
+<link rel="manifest" href="/assets/manifest.json">
+
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+
+
+
+
+<link id="_disqusJS" rel="dns-prefetch" href="https://yizhang82.disqus.com/embed.js">
+
+
+
+<link id="_katexJS"  rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.js">
+<link id="_katexCSS" rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.css">
+
+<script>
+  function stdOnEnd(n,e){n.onload=function(){this.onerror=this.onload=null,e(null,n)},n.onerror=function(){this.onerror=this.onload=null,e(new Error("Failed to load "+this.src),n)}}function ieOnEnd(n,e){n.onreadystatechange=function(){"complete"!=this.readyState&&"loaded"!=this.readyState||(this.onreadystatechange=null,e(null,n))}}window.setRelStylesheet=function(n){function e(){this.rel="stylesheet"}var o=document.getElementById(n);o.addEventListener?o.addEventListener("load",e,!1):o.onload=e},window._loaded=!1,window.loadJSDeferred=function(n,e){function o(){window._loaded=!0;var o=document.createElement("script");o.src=n,e&&(("onload"in o?stdOnEnd:ieOnEnd)(o,e),o.onload||stdOnEnd(o,e));var t=document.scripts[0];t.parentNode.insertBefore(o,t)}window._loaded?o():window.addEventListener?window.addEventListener("load",o,!1):window.onload=o};
+!function(a){"use strict";var b=function(b,c,d){function e(a){return h.body?a():void setTimeout(function(){e(a)})}function f(){i.addEventListener&&i.removeEventListener("load",f),i.media=d||"all"}var g,h=a.document,i=h.createElement("link");if(c)g=c;else{var j=(h.body||h.getElementsByTagName("head")[0]).childNodes;g=j[j.length-1]}var k=h.styleSheets;i.rel="stylesheet",i.href=b,i.media="only x",e(function(){g.parentNode.insertBefore(i,c?g:g.nextSibling)});var l=function(a){for(var b=i.href,c=k.length;c--;)if(k[c].href===b)return a();setTimeout(function(){l(a)})};return i.addEventListener&&i.addEventListener("load",f),i.onloadcssdefined=l,l(f),i};"undefined"!=typeof exports?exports.loadCSS=b:a.loadCSS=b}("undefined"!=typeof global?global:this);
+!function(a){if(a.loadCSS){var b=loadCSS.relpreload={};if(b.support=function(){try{return a.document.createElement("link").relList.supports("preload")}catch(b){return!1}},b.poly=function(){for(var b=a.document.getElementsByTagName("link"),c=0;c<b.length;c++){var d=b[c];"preload"===d.rel&&"style"===d.getAttribute("as")&&(a.loadCSS(d.href,d,d.getAttribute("media")),d.rel=null)}},!b.support()){b.poly();var c=a.setInterval(b.poly,300);a.addEventListener&&a.addEventListener("load",function(){b.poly(),a.clearInterval(c)}),a.attachEvent&&a.attachEvent("onload",function(){a.clearInterval(c)})}}}(this);
+
+  window._noPushState = false;
+  window._noDrawer = false;
+</script>
+
+<!--[if gt IE 8]><!---->
+
+
+<script>
+  WebFontConfig = {
+    
+    google: {
+      families: ['Roboto+Slab:700','Noto+Sans:400,400i,700,700i']
+    },
+    
+
+    custom: {
+      families: ['icomoon'],
+      urls: ['/assets/icomoon/style.css']
+    }
+  };
+  (function(d) {
+    var wf = d.createElement('script'), s = d.scripts[0];
+    wf.src = "/assets/bower_components/webfontloader/webfontloader.js";
+    s.parentNode.insertBefore(wf, s);
+  }(document));
+</script>
+<!--<![endif]-->
+
+<noscript>
+  
+  
+
+  
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Slab:700%7CNoto+Sans:400,400i,700,700i">
+    <style>
+      html { font-family: Noto Sans, Helvetica, Arial, sans-serif }
+      h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .heading { font-family: Roboto Slab, Helvetica, Arial, sans-serif }
+    </style>
+  
+
+  <link rel="stylesheet" href="/assets/icomoon/style.css">
+</noscript>
+
+<!--[if gt IE 8]><!---->
+
+
+
+  <link rel="stylesheet" href="/assets/css/hydejack-7.5.0.css">
+
+
+
+<style id="_pageStyle">
+
+.content a:not(.btn){color:#4fb1ba;border-color:rgba(79,177,186,0.2)}.content a:not(.btn):hover{border-color:#4fb1ba}:focus{outline-color:#4fb1ba}.btn-primary{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:focus,.btn-primary.focus{box-shadow:0 0 0 3px rgba(79,177,186,0.5)}.btn-primary:hover,.btn-primary.hover{color:#fff;background-color:#409ba3;border-color:#409ba3}.btn-primary:disabled,.btn-primary.disabled{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:active,.btn-primary.active{color:#fff;background-color:#409ba3;border-color:#409ba3}::selection{color:#fff;background:#4fb1ba}::-moz-selection{color:#fff;background:#4fb1ba}
+
+</style>
+
+<!--<![endif]-->
+
+
+
+
+</head>
+
+<body>
+  <div class="navbar fixed-top">
+  <div class="content">
+    <div class="nav-btn-bar">
+      <span class="sr-only">Jump to:</span>
+      <a id="_menu" class="nav-btn no-hover" href="#_navigation">
+        <span class="sr-only">Navigation</span>
+        <span class="icon-menu"></span>
+      </a>
+    </div>
+  </div>
+</div>
+
+
+<hy-push-state>
+  <main
+    id="_main"
+    class="content fade-in layout-post"
+    role="main"
+    data-color="#4fb1ba"
+    data-theme-color=""
+    
+      data-image="/assets/img/sidebar-bg.jpg"
+      data-overlay
+    
+    >
+    
+
+
+<article id="post-dependent-handle" class="page post" role="article">
+  <header>
+    <h1 class="post-title">
+      
+        Top secret .NET handles - Part 1 - Dependent handles
+      
+    </h1>
+
+    <p class="post-date heading">
+      
+      <time datetime="2018-01-24T00:00:00-08:00">24 Jan 2018</time>
+      
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+in <span>Gc</span> / <span>Handle</span> / <span>Dotnet</span> / <span>C#</span>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+    </p>
+
+    
+
+
+
+  
+    <p class="message" >
+      Top secret .NET handles - Part 1 - Dependent handles
+
+    </p>
+  
+
+
+  </header>
+
+  
+    <p>.NET publicly has documented 4 kind of handles:</p>
+
+<ol>
+  <li>
+    <p><em>Weak</em> (also called Short Weak) - Don’t keep target object alive and will return null when object is gone. The target will become null when the object enters for finalization.</p>
+  </li>
+  <li>
+    <p><em>WeakTrackResurrection</em> (also called Long Weak) - Don’t keep target object alive and will return null when object is gone. It’ll return the object even when the object is being finalized or resurrected.</p>
+  </li>
+  <li>
+    <p><em>Normal</em> (also called strong) - keeps target object alive. If you are not careful, you may leak the object.</p>
+  </li>
+  <li>
+    <p><em>Pinned</em> - Keeps the target object alive and prevents GC from moving this object around. Useful when you are passing this object to native code, as native code won’t know if GC moved it. Note that using a lot of pinning handles may degrade GC performance. The most common offender is pinned strings/arrays in interop calls.</p>
+  </li>
+</ol>
+
+<p>You can also find them described in <a href="https://msdn.microsoft.com/en-us/library/83y4ak54.aspx">GCHandle enumeration</a>.</p>
+
+<p>However, besides these 4 types, there are actually more secret internal handle types that are not exposed. In this post I’ll be talking about dependent handle, and why it is totally awesome.</p>
+
+<!--more-->
+
+<h2 id="caching-without-leaks">Caching without leaks</h2>
+
+<p>Let’s say you want to implement the best cache ever for your customer. Naturally you start with a <code class="highlighter-rouge">Dictionary&lt;Customer, CustomerData&gt;</code> and start adding things into it. So far so good. Except that all of your customers are now leaking. It’s obvious - they are being held by the dictionary! If you are in total control of the lifetime of the <code class="highlighter-rouge">Customer</code> object (for example, you have a dispose), it’s straigh-forward to automatically remove it from cache when it disposes. However, this may not always be possible. Another obvious choice is to resort back to finalizers - adding a finalizer to <code class="highlighter-rouge">Customer</code> type which removes itself from the cache when it finalizes. It works, but it means you now have potentially lots of objects that are finalizable, and there is only one finalizer thread. There is something called finalizer starvation - meaning finalizer couldn’t catch up with the objects that are finalized. Oops.</p>
+
+<p>Now, what if the key is not held alive by the Dictionary, and instead is a <code class="highlighter-rouge">WeakReference&lt;Customer&gt;</code>? But this doens’t really work - you are no longer leaking <code class="highlighter-rouge">WeakReference&lt;Customer&gt;</code>, but you are still leaking <code class="highlighter-rouge">CustomerData</code>, and what if <code class="highlighter-rouge">CustomerData</code> has a reference back to Customer? You are back to square one.</p>
+
+<p>Before we give up, let’s try one more thing - let’s make both key and value to a <code class="highlighter-rouge">WeakReference&lt;T&gt;</code>. Now we no longer leak <code class="highlighter-rouge">Customer</code> nor <code class="highlighter-rouge">CustomerData</code>. However, the cache doesn’t work quite right, some times you’d have null keys, or you have null values.</p>
+
+<p>You can keep trying, but the real problem is that we need two simple things:</p>
+
+<ul>
+  <li>Key and Value should both be alive, or not alive</li>
+  <li>If Key is not alive, we should allow key to be collected as if key is held by a weak reference</li>
+</ul>
+
+<p>Now if this were custom data structure, this is easy to implement - just have the key reference the value thorugh a field, and have a WeakReference to the key. Done.</p>
+
+<p>But what if we want a general purpose data structure? You can’t exactly add a new field to arbitary T.</p>
+
+<h2 id="dependenthandle-to-the-rescue">DependentHandle to the rescue</h2>
+
+<p><code class="highlighter-rouge">Dependent handle</code> is designed to solve these kind of problems - creating a <em>dependency</em> between lifetime of two separate objects. Unlike regular handles, a dependent handle has two targets - primary and secondary. It has the same effect as a field reference - GC will scan primary and secondary, and will keep secondary alive if primary is alive.</p>
+
+<p>If you are familiar with GC in a high-level (there aren’t many true GC experts out there and I’m not one of them), you’ll know that .NET GC scans live objects by <em>tracing</em> through object references, starting from roots - that is static variables, thread locals, stack variables, and strong (normal) handles, and going object to object, field by field. Dependent handle are kinda special by itself - GC will scan a list of dependent handle, and will mark secondary (making it alive, surviving this GC) alive if primary is alive.</p>
+
+<p>Note that GC may have to scan the dependent handle list multiple times. If C -&gt; A, A -&gt; D, B -&gt; C, the first scan may skip C -&gt; A but would mark C eventually due to B is alive, then it has to come back and mark C -&gt; A, A -&gt; D, basically marking new objects. So GC will keep scanning the dependent handle list until there are no more new objects being marked (alive). Another reason that GC may need to do this is due to mark stack overflow (when GC ran out of stack space during mark).</p>
+
+<p>You might think this is not very efficient, and it is not super efficient indeed. In theory you could get rid of this multiple scan, because the problem is you don’t have all the edge information as you go. This is solvable by essentially traverse the list of dependent handles and builds up a graph - thus avoiding traversing the same node twice as you already have all the edges, similar to the regular object graph traversing case (you’d have all the fields that are your edges). However, because the list of dependent handles, and the objects they point to are dynamic, building up this graph can be expensive, and you would be doing this work pretty much every GC (since the graph could easily change). In practice, a complicated graph between dependent handles are not common, so the trade-off works out in our favor. But this implementation for sure may subject to future change.</p>
+
+<p>If you are curious you can refer to <a href="https://github.com/dotnet/coreclr/blob/release/2.0.0/src/gc/objecthandle.cpp#L1267">https://github.com/dotnet/coreclr/blob/release/2.0.0/src/gc/objecthandle.cpp#L1267</a>:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Scan the dependent handle table promoting any secondary object whose associated primary object is promoted.
+//
+// Multiple scans may be required since (a) secondary promotions made during one scan could cause the primary
+// of another handle to be promoted and (b) the GC may not have marked all promoted objects at the time it
+// initially calls us.
+//
+// Returns true if any promotions resulted from this scan.
+</span><span class="kt">bool</span> <span class="nf">Ref_ScanDependentHandlesForPromotion</span><span class="p">(</span><span class="n">DhContext</span> <span class="o">*</span><span class="n">pDhContext</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">LOG</span><span class="p">((</span><span class="n">LF_GC</span><span class="p">,</span> <span class="n">LL_INFO10000</span><span class="p">,</span> <span class="s">"Checking liveness of referents of dependent handles in generation %u</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_iCondemned</span><span class="p">));</span>
+    <span class="kt">uint32_t</span> <span class="n">type</span> <span class="o">=</span> <span class="n">HNDTYPE_DEPENDENT</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">flags</span> <span class="o">=</span> <span class="p">(</span><span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_pScanContext</span><span class="o">-&gt;</span><span class="n">concurrent</span><span class="p">)</span> <span class="o">?</span> <span class="n">HNDGCF_ASYNC</span> <span class="o">:</span> <span class="n">HNDGCF_NORMAL</span><span class="p">;</span>
+    <span class="n">flags</span> <span class="o">|=</span> <span class="n">HNDGCF_EXTRAINFO</span><span class="p">;</span>
+
+    <span class="c1">// Keep a note of whether we promoted anything over the entire scan (not just the last iteration). We need
+</span>    <span class="c1">// to return this data since under server GC promotions from this table may cause further promotions in
+</span>    <span class="c1">// tables handled by other threads.
+</span>    <span class="kt">bool</span> <span class="n">fAnyPromotions</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+
+    <span class="c1">// Keep rescanning the table while both the following conditions are true:
+</span>    <span class="c1">//  1) There's at least primary object left that could have been promoted.
+</span>    <span class="c1">//  2) We performed at least one secondary promotion (which could have caused a primary promotion) on the
+</span>    <span class="c1">//     last scan.
+</span>    <span class="c1">// Note that even once we terminate the GC may call us again (because it has caused more objects to be
+</span>    <span class="c1">// marked as promoted). But we scan in a loop here anyway because it is cheaper for us to loop than the GC
+</span>    <span class="c1">// (especially on server GC where each external cycle has to be synchronized between GC worker threads).
+</span>    <span class="k">do</span>
+    <span class="p">{</span>
+        <span class="c1">// Assume the conditions for re-scanning are both false initially. The scan callback below
+</span>        <span class="c1">// (PromoteDependentHandle) will set the relevant flag on the first unpromoted primary it sees or
+</span>        <span class="c1">// secondary promotion it performs.
+</span>        <span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_fUnpromotedPrimaries</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_fPromoted</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+
+        <span class="n">HandleTableMap</span> <span class="o">*</span><span class="n">walk</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">g_HandleTableMap</span><span class="p">;</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">walk</span><span class="p">)</span> 
+        <span class="p">{</span>
+            <span class="k">for</span> <span class="p">(</span><span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">INITIAL_HANDLE_TABLE_ARRAY_SIZE</span><span class="p">;</span> <span class="n">i</span> <span class="o">++</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">walk</span><span class="o">-&gt;</span><span class="n">pBuckets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+                <span class="p">{</span>
+                    <span class="n">HHANDLETABLE</span> <span class="n">hTable</span> <span class="o">=</span> <span class="n">walk</span><span class="o">-&gt;</span><span class="n">pBuckets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">pTable</span><span class="p">[</span><span class="n">getSlotNumber</span><span class="p">(</span><span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_pScanContext</span><span class="p">)];</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">hTable</span><span class="p">)</span>
+                    <span class="p">{</span>
+                        <span class="n">HndScanHandlesForGC</span><span class="p">(</span><span class="n">hTable</span><span class="p">,</span>
+                                            <span class="n">PromoteDependentHandle</span><span class="p">,</span>
+                                            <span class="kt">uintptr_t</span><span class="p">(</span><span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_pScanContext</span><span class="p">),</span>
+                                            <span class="kt">uintptr_t</span><span class="p">(</span><span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_pfnPromoteFunction</span><span class="p">),</span>
+                                            <span class="o">&amp;</span><span class="n">type</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+                                            <span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_iCondemned</span><span class="p">,</span>
+                                            <span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_iMaxGen</span><span class="p">,</span>
+                                            <span class="n">flags</span> <span class="p">);</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">walk</span> <span class="o">=</span> <span class="n">walk</span><span class="o">-&gt;</span><span class="n">pNext</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_fPromoted</span><span class="p">)</span>
+            <span class="n">fAnyPromotions</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+
+    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_fUnpromotedPrimaries</span> <span class="o">&amp;&amp;</span> <span class="n">pDhContext</span><span class="o">-&gt;</span><span class="n">m_fPromoted</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="n">fAnyPromotions</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="conditionalweaktable">ConditionalWeakTable</h2>
+
+<p>Now you might wonder: if dependent handle is totally awesome but why is it hidden and not used? That’s actually not quite correct. It is true that dependent handles are not directly exposed to developers, they are actually available through the <a href="https://msdn.microsoft.com/en-us/library/dd287757.aspx"><code class="highlighter-rouge">ConditionalWeakTable</code></a> class.</p>
+
+<p>In the future, I’m also planning to write a series of post talking about the implementations of .NET concurrent data structures. A natural first post would be talking about how the <code class="highlighter-rouge">ConditionalWeakTable</code> is implemented - how it is using DependentHandle, how it supports thread-safety, etc. You can find its implementation <a href="https://github.com/dotnet/coreclr/blob/release/2.0.0/src/mscorlib/src/System/Runtime/CompilerServices/ConditionalWeakTable.cs">here</a> if you are interested to take a look yourself first. (I must confess that I added the <code class="highlighter-rouge">FindEquivalentKeyUnsafe</code> method and I’m not proud of it).</p>
+
+<p>Besides <code class="highlighter-rouge">ConditionalWeakTable</code>, dependent handle is also used internally in the .NET runtime to report missing references in native code to GC so that GC can resolve cycles between native WinRT objects and managed objects. But that itself is a rather involved topic and deserve its own post.</p>
+
+<h2 id="whats-next">What’s next</h2>
+
+<p>In the next Secret .NET handles post, I’ll talk about my favorite handle type (I’m certainly baised on this one) - a ref counted handle. It’s used in <a href="https://docs.microsoft.com/en-us/dotnet/framework/interop/com-callable-wrapper">Com Callable Wrappers</a>.</p>
+
+<p>For a complete list of handle types, see</p>
+
+<p><a href="https://github.com/dotnet/coreclr/blob/release/2.0.0/src/gc/gcinterface.h#L241">https://github.com/dotnet/coreclr/blob/release/2.0.0/src/gc/gcinterface.h#L241</a></p>
+
+
+  
+</article>
+
+
+<hr class="dingbat related" />
+
+
+
+
+  
+     
+
+
+  <aside class="about related mt4 mb4" role="complementary">
+    
+    
+
+<div class="author mt4">
+  
+
+  
+    
+    
+<img class="avatar" src="https://avatars1.githubusercontent.com/yizhang82?v=3&s=128" alt="yizhang82" srcset="https://avatars1.githubusercontent.com/yizhang82?v=3&s=128 1x, https://avatars1.githubusercontent.com/yizhang82?v=3&s=256 2x, https://avatars1.githubusercontent.com/yizhang82?v=3&s=384 3x, https://avatars1.githubusercontent.com/yizhang82?v=3&s=512 4x" width="128" height="128" data-proofer-ignore="true" />
+
+  
+
+  
+  
+  <h2  class="page-title hr">
+    About
+  </h2>
+
+  <p>Principal Software Engineer working on Windows Azure focusing on transactional data programming and storage solution across multiple languages. Previously worked in .NET / CLR team for ~10 years on full .NET, .NET Core, and .NET Native. Amature piano player, passionate gamer, and proud dad.</p>
+
+
+  <div class="sidebar-social">
+    <span class="sr-only">Social:</span>
+<ul>
+  
+
+  
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://twitter.com/yizhang82" title="Twitter" class="no-mark-external">
+    <span class="icon-twitter"></span>
+    <span class="sr-only">Twitter</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://github.com/yizhang82" title="GitHub" class="no-mark-external">
+    <span class="icon-github"></span>
+    <span class="sr-only">GitHub</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="mailto:mail@yizhang82.me" title="Email" class="no-mark-external">
+    <span class="icon-mail"></span>
+    <span class="sr-only">Email</span>
+  </a>
+</li>
+
+  
+</ul>
+
+  </div>
+</div>
+
+  </aside>
+
+
+  
+
+  
+  
+
+  
+    
+
+
+
+
+
+  
+
+
+    
+
+<aside class="comments related" role="complementary">
+  <h2 class="hr">Comments</h2>
+  <div id="disqus_thread"></div>
+  <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+</aside>
+
+
+    <footer role="contentinfo">
+  <hr/>
+  
+    <p><small class="copyright">© 2017. All rights reserved.
+</small></p>
+  
+  
+  <p><small>Powered by <a class="external" href="https://qwtel.com/hydejack/">Hydejack</a> v<span id="_version">7.5.0</span></small></p>
+  <hr class="sr-only"/>
+</footer>
+
+  </main>
+  <hy-drawer>
+  <header id="_sidebar" class="sidebar" role="banner">
+    
+    <div class="sidebar-bg sidebar-overlay" style="background-color:#4fb1ba;background-image:url(/assets/img/sidebar-bg.jpg)"></div>
+
+    <div class="sidebar-sticky">
+      <div class="sidebar-about">
+        <h2 class="h1"><a href="/">yizhang82's blog</a></h2>
+        
+        
+          <p class="">
+            Languages, Runtime, Data structures, Databases, and everything in between
+
+          </p>
+        
+      </div>
+
+      <nav class="sidebar-nav heading" role="navigation">
+        <span class="sr-only">Navigation:</span>
+<ul>
+  
+  
+  
+  
+    
+      <li>
+        <a
+          id="_navigation"
+          href="/tag/hyde/"
+          class="sidebar-nav-item"
+          
+          >
+          Hyde
+        </a>
+      </li>
+    
+  
+    
+      <li>
+        <a
+          
+          href="/tag/hydejack/"
+          class="sidebar-nav-item"
+          
+          >
+          Hydejack
+        </a>
+      </li>
+    
+  
+    
+      <li>
+        <a
+          
+          href="/docs/7.5.0/"
+          class="sidebar-nav-item"
+          
+          >
+          Documentation
+        </a>
+      </li>
+    
+  
+</ul>
+
+      </nav>
+
+      
+
+      <div class="sidebar-social">
+        <span class="sr-only">Social:</span>
+<ul>
+  
+
+  
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://twitter.com/yizhang82" title="Twitter" class="no-mark-external">
+    <span class="icon-twitter"></span>
+    <span class="sr-only">Twitter</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="https://github.com/yizhang82" title="GitHub" class="no-mark-external">
+    <span class="icon-github"></span>
+    <span class="sr-only">GitHub</span>
+  </a>
+</li>
+
+  
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+  <a href="mailto:mail@yizhang82.me" title="Email" class="no-mark-external">
+    <span class="icon-mail"></span>
+    <span class="sr-only">Email</span>
+  </a>
+</li>
+
+  
+</ul>
+
+      </div>
+    </div>
+  </header>
+</hy-drawer>
+
+</hy-push-state>
+
+
+  
+
+  <!--[if gt IE 9]><!---->
+  
+  <script>loadJSDeferred('/assets/js/hydejack-7.5.0.js');</script>
+  
+  <!--<![endif]-->
+
+
+
+  
+<hr class="sr-only"/>
+<h2 class="sr-only">Templates (for web app):</h2>
+
+<template id="_animation-template">
+  <div class="animation-main fixed-top">
+    <div class="content">
+      <div class="page"></div>
+    </div>
+  </div>
+</template>
+
+<template id="_loading-template">
+  <div class="loading">
+    <span class="sr-only">Loading…</span>
+    <span class="icon-cog"></span>
+  </div>
+</template>
+
+<template id="_error-template">
+  <div class="page">
+    <h1 class="page-title">Error</h1>
+    
+    
+    <p class="lead">
+      Sorry, an error occurred while loading <a class="this-link" href=""></a>.
+
+    </p>
+  </div>
+</template>
+
+<template id="_back-template">
+  <a id="_back" class="back nav-btn no-hover">
+    <span class="sr-only">Back</span>
+    <span class="icon-arrow-left2"></span>
+  </a>
+</template>
+
+<template id="_permalink-template">
+  <a href="#" class="permalink">
+    <span class="sr-only">Permalink</span>
+    <span class="icon-link"></span>
+  </a>
+</template>
+
+
+
+</body>
+</html>
