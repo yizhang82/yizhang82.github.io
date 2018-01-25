@@ -5,6 +5,7 @@ date:   2018-01-22
 description: Calling C functions from Python - part 3 - deep dive into ctypes implementation in CPython
 permalink: python-interop-inside-ctypes
 comments: true
+excerpt_separator: <!--more-->
 categories:
 - python
 - interop
@@ -16,9 +17,11 @@ categories:
 
 Last time we've looked at using ctypes to call C API, and writing extension module using Python/C API. Now we can finally tie these two together - looking at how ctypes is actually implemented using mix of Python/C API  and Python code.
 
-You can find CPython source code [here](https://github.com/python/cpython).
+* You can find CPython source code [here](https://github.com/python/cpython).
+* ctypes' C implementation is [here](https://github.com/python/cpython/tree/master/Modules/_ctypes) 
+* ctypes' python implementation is [here](https://github.com/python/cpython/tree/master/Lib/ctypes).
 
-ctypes C implementation is [here](https://github.com/python/cpython/tree/master/Modules/_ctypes) while the python implementation is [here](https://github.com/python/cpython/tree/master/Lib/ctypes).
+<!--more-->
 
 ## Loading libraries
 

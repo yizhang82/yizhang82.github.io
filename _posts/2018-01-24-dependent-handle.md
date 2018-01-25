@@ -5,6 +5,7 @@ date:   2018-01-24
 description: Top secret .NET handles - Part 1 - Dependent handles
 permalink: dependent-handle
 comments: true
+excerpt_separator: <!--more-->
 categories:
 - GC
 - handle
@@ -25,6 +26,8 @@ categories:
 You can also find them described in [GCHandle enumeration](https://msdn.microsoft.com/en-us/library/83y4ak54.aspx).
 
 However, besides these 4 types, there are actually more secret internal handle types that are not exposed. In this post I'll be talking about dependent handle, and why it is totally awesome.
+
+<!--more-->
 
 ## Caching without leaks
 
@@ -51,7 +54,7 @@ If you are familiar with GC in a high-level (there aren't many true GC experts o
 
 Note that GC may have to scan the dependent handle list multiple times. If C -> A, A -> D, B -> C, the first scan may skip C -> A but would mark C eventually due to B is alive, then it has to come back and mark C -> A, A -> D, basically marking new objects. So GC will keep scanning the dependent handle list until there are no more new objects being marked (alive). Another reason that GC may need to do this is due to mark stack overflow (when GC ran out of stack space during mark). 
 
-You might think this is not very efficient, and it is not. In theory you could get rid of this multiple scan, because the problem is you don't have all the edge information as you go. This is solvable by essentially traverse the list of dependent handles and builds up a graph - thus avoiding traversing the same node twice as you already have all the edges, similar to the regular object graph traversing case (you'd have all the fields that are your edges). However, because the list of dependent handles, and the objects they point to are dynamic, building up this graph can be expensive, and you would be doing this work pretty much every GC (since the graph could easily change). In practice, a complicated graph between dependent handles are not common, so the trade-off works out in our favor. But this implementation for sure may subject to future change.
+You might think this is not very efficient, and it is not super efficient indeed. In theory you could get rid of this multiple scan, because the problem is you don't have all the edge information as you go. This is solvable by essentially traverse the list of dependent handles and builds up a graph - thus avoiding traversing the same node twice as you already have all the edges, similar to the regular object graph traversing case (you'd have all the fields that are your edges). However, because the list of dependent handles, and the objects they point to are dynamic, building up this graph can be expensive, and you would be doing this work pretty much every GC (since the graph could easily change). In practice, a complicated graph between dependent handles are not common, so the trade-off works out in our favor. But this implementation for sure may subject to future change.
 
 If you are curious you can refer to <https://github.com/dotnet/coreclr/blob/release/2.0.0/src/gc/objecthandle.cpp#L1267>:
 
@@ -131,7 +134,7 @@ In the future, I'm also planning to write a series of post talking about the imp
 
 Besides `ConditionalWeakTable`, dependent handle is also used internally in the .NET runtime to report missing references in native code to GC so that GC can resolve cycles between native WinRT objects and managed objects. But that itself is a rather involved topic and deserve its own post.
 
-# What's next
+## What's next
 
 In the next Secret .NET handles post, I'll talk about my favorite handle type (I'm certainly baised on this one) - a ref counted handle. It's used in [Com Callable Wrappers](https://docs.microsoft.com/en-us/dotnet/framework/interop/com-callable-wrapper).
 
