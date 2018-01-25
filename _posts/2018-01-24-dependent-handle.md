@@ -1,17 +1,30 @@
-
-# Secret .NET handles - Part 1 - DependentHandle
+---
+layout: post
+title:  "Top secret .NET handles - Part 1 - Dependent handles"
+date:   2018-01-24
+description: Top secret .NET handles - Part 1 - Dependent handles
+permalink: dependent-handle
+comments: true
+categories:
+- GC
+- handle
+- dotnet
+- C#
+---
 
 .NET publicly has documented 4 kind of handles:
 
-1.Short Weak - Don't keep target object alive and will return null when object is gone or ready for finalization.
+1. *Weak* (also called Short Weak) - Don't keep target object alive and will return null when object is gone. The target will become null when the object enters for finalization.
 
-2.Long Weak - Don't keep target object alive and will return null when object is gone. It'll return the object when the object is being finalized.
+2. *WeakTrackResurrection* (also called Long Weak) - Don't keep target object alive and will return null when object is gone. It'll return the object even when the object is being finalized or resurrected.
 
-3.Normal - keeps target object alive. If you are not careful, you may leak the object.
+3. *Normal* (also called strong) - keeps target object alive. If you are not careful, you may leak the object.
 
-4.Pinned - Keeps the target object alive and prevents GC from moving this object around. Useful when you are passing this object to native code and native code won't know if GC moved it. Note that using a lot of pinning handles may degrade GC performance (I've got GC team bugging me about pinned string handles in the past - they don't like pinning handles).
+4. *Pinned* - Keeps the target object alive and prevents GC from moving this object around. Useful when you are passing this object to native code, as native code won't know if GC moved it. Note that using a lot of pinning handles may degrade GC performance. The most common offender is pinned strings/arrays in interop calls.
 
-Actually, there are more secret internal handle types that are not exposed. In this post I'll be talking about dependent handle, and why it is totally awesome.
+You can also find them described in [GCHandle enumeration](https://msdn.microsoft.com/en-us/library/83y4ak54.aspx).
+
+However, besides these 4 types, there are actually more secret internal handle types that are not exposed. In this post I'll be talking about dependent handle, and why it is totally awesome.
 
 ## Caching without leaks
 
