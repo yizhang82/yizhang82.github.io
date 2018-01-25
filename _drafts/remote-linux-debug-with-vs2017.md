@@ -19,10 +19,10 @@ Now back to the windows box where I got a local LLVM repo. After doing Cmake, I 
 
 Then open VS 2017 (with or without your solution), and goto Debug/Attach to Process...,
 
-![remote](/assets/images/remote-dbg-2.png)
+![remote](/assets/img/remote-dbg-2.png)
 
 Make sure you pick SSH, and put your host name/IP. You should be able to see all the process in the box, including the target process (in this case, lldb) that you would like to debug. For debug engine, you can choose GDB(Native). And now attach!
 
-![remote](/assets/images/remote-dbg-1.png)
+![remote](/assets/img/remote-dbg-1.png)
 
 It is amazing to see VS debugging code on a linux box - this is something that I didn't expect to see if you ask me a few years ago.

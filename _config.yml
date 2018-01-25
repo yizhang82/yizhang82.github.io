@@ -101,10 +101,15 @@ defaults:
       menu: true
       order: 3
   - scope:
-      path: about.md
+      path: todo.md
     values:
       menu: true
       order: 4
+  - scope:
+      path: about.md
+    values:
+      menu: true
+      order: 5 
 
 # 3rd Party Integrations
 # ----------------------------------------------------------------------------------------
