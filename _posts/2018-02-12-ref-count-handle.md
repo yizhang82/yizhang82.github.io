@@ -1,7 +1,20 @@
+---
+layout: post
+title:  "Top secret .NET handles - Part 2 - Ref-Counted handles"
+date:   2018-02-12
+description: Top secret .NET handles - Part 2 - Ref-Counted handles
+permalink: ref-counted-handle
+comments: true
+excerpt_separator: <!--more-->
+categories:
+- GC
+- handle
+- dotnet
+- C#
+- interop
+---
 
-Last time we talked about dependent handles and I promised we'll take a look at ref-counted handles. 
-
-A ref-counted handle is a special handle that will become either strong or weak depending on the ref count. It's only used in COM interop today internally in the CLR. 
+Last time we talked about .NET dependent handle. It is a handle that promotes secondary if primary is promoted - as if there is a imaginary reference between them. This time let's take a look at another secret handle - ref-counted handle. A ref-counted handle is a special handle that will become either strong or weak depending on the ref count. It's only used in COM interop today internally in the CLR.
 
 You can find its definition in [gcinterface.h](https://github.com/dotnet/coreclr/blob/dev/release/2.0.0/src/gc/gcinterface.h#L311-L321)
 
@@ -19,6 +32,8 @@ You can find its definition in [gcinterface.h](https://github.com/dotnet/coreclr
     HNDTYPE_REFCOUNTED   = 5,
 ```
 
+<!--more-->
+
 A bit of background before we dive deeper into the details:
 
 COM ref counts is a counter tracking usage counts of each COM object. If it is more than 0, the COM object is alive and can be access. If it ever drops to 0, the COM object deletes itself. Every COM interface has defined AddRef/Release methods to manipulate ref count on the object. If you want to use a COM object, call AddRef to increase its ref count. When you are done, call Release to drop the ref count you "obtained". 
@@ -27,13 +42,15 @@ Why COM decides to use ref counts? It's a straight-forward (if a bit verbose and
 
 In COM interop, CLR needs to expose managed objects as COM objects, and naturally those needs to obey COM lifetime semantics as well, meaning it needs to maintain its own ref count, and be alive if its ref count is more than 0, and allow itself to be collected by GC if ref count drops to 0. Obviously if ref count drops to 0, but there are still other managed objects pointing to this object, it will still be alive. 
 
-A ref-counted handle does exactly that: 
+A ref-counted handle does the following: 
+
 * If ref-count is > 0, ref-counted handle becomes a strong handle
+
 * If ref-count is 0, it becomes a weak handle
 
 (You'll see later the above is not technically accurate - but this is good enough for now)
 
-Whenever CLR passes a managed object to native as COM object, it'll create a [CCW - Com Callable Wrapper] (https://docs.microsoft.com/en-us/dotnet/framework/interop/com-callable-wrapper) which has a ref-counted handle pointing to the underlying managed object. In CLR source code, a CCW is implemented using a link list of ComCallWrapper and SimpleComCallableWrapper.
+Whenever CLR passes a managed object to native as COM object, it'll create a [CCW - Com Callable Wrapper](https://docs.microsoft.com/en-us/dotnet/framework/interop/com-callable-wrapper) which has a ref-counted handle pointing to the underlying managed object. In CLR source code, a CCW is implemented using a link list of ComCallWrapper and SimpleComCallableWrapper.
 
 Let's take a look at how GC sees the ref-counted handle:
 
@@ -78,7 +95,7 @@ void CALLBACK PromoteRefCounted(_UNCHECKED_OBJECTREF *pObjRef, uintptr_t *pExtra
 ```
 
 It simply asks "are you alive" through `RefCountedHandleCallbacks`. This function is poorly named in my opinion, for two reasons:
-* It returns a bool which asks the question "are you alive" - so `IsRefCountedObjectAlive` is a better name
+* It returns a bool and asks the question "are you alive" - so `IsRefCountedObjectAlive` is a better name
 * It only calls for one object, so the 'callbacks' is a misnomer.
 
 Now you see what I meant earlier. A ref-counted handle really doesn't track ref counts - it only ask the target object "are you alive"? And the ref count is simply detail being tracked by the object itself, not a property of the ref-counted handle.
@@ -145,13 +162,25 @@ It should be obvious by now that ref-counted handle is hard coded to CCWs - it k
 One can imagine this could be exposed as a general mechanism - and GC can ask the handle whether it is alive or weak.
 
 This can be designed in a few different ways:
+
 1. The handle maintains a boolean
+
 2. The handle maintain its own ref-count
+
 3. The handle has a callback and GC makes a callback
 
 At a first glance go with #3 seems the most flexible. Unfortunately it has a few problems:
+
 * The callback could take arbitary time and could even deadlock - in this case what you'll see is that GC taking long time or don't ever finish. If there are a lot of such objects, the GC team could get a lot of calls from angry customers.
+
 * Writing the callback is also quite challenging. Imagine if you try to allocate an object in the callback (which is not a outragous idea), and that object triggers a GC, now you've got yourself a deadlock because GC is running! You might make the deadlock case a no-op, but that breaks the invariant of GC and presents a much bigger problem.
 
 Go with #1/#2 is probably more reasonable. The handle just needs to maintain a separate ref-count or a boolean, and that gets updated by other code as needed. Unfortunately this can't be generalized to be used by CCW as it actually needs to run some code. In the code I've shown you earlier, it does more than just looking at a ref-count, and it looks at some internal data structure that only updated in GC as well (for resolving native/managed cycles). So this effectively means that the existing ref-count handle can't be exposed as-is. This is probably why it is not exposed at all - there needs to be people asking for this feature and this needs to be done as a new feature with its own design and scenario.
 
+## What's next
+
+Next time I'll probably cover AsyncPinned handle. It has special magic powers that can pin objects recursively.
+
+For a complete list of handle types, see
+
+<https://github.com/dotnet/coreclr/blob/release/2.0.0/src/gc/gcinterface.h#L241>
