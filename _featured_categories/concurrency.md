@@ -1,9 +1,9 @@
 ---
 layout: list
-title: Interop
-slug: interop
+title: Concurrency
+slug: concurrency
 menu: true
-order: 2
+order: 3
 description: >
   
 accent_color: '#268bd2'
