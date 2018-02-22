@@ -23,14 +23,14 @@ struct super_accurate_time
     int day;
 }
 
-void super_accurate_time(super_accurate_time *time);
+void get_super_accurate_time(super_accurate_time *time);
 ```
 
 And user should call it like this:
 
 ```c
 super_accurate_time time;
-get_time(&super_accurate_time);
+get_super_accurate_time(&super_accurate_time);
 ```
 
 So far so good.
@@ -72,15 +72,15 @@ Caller needs to initialize the `super_accurate_time` struct with the size:
 
 super_accurate_time time;
 time.size = sizeof(time);
-get_time(&super_accurate_time);
+get_super_accurate_time(&super_accurate_time);
 
 ```
 
-You'll see quite a bit of code like this when working with Windows APIs - they are there for this exact reason. Once you have the size, you can implement get_time and fill-in the correct contents as needed:
+You'll see quite a bit of code like this when working with Windows APIs - they are there for this exact reason. Once you have the size, you can implement `get_super_accurate_time` and fill-in the fields as needed:
 
 ```c
 
-void get_time(super_accurate_time *time)
+void get_super_accurate_time(super_accurate_time *time)
 {
     if (time->size >= SUPER_ACCURATE_TIME_V1)
     {
@@ -124,7 +124,7 @@ struct super_accurate_time_v2
     int second;
 }
 
-void get_time(super_accurate_time *time)
+void get_super_accurate_time(super_accurate_time *time)
 {
     if (time->size >= sizeof(super_accurate_time_v1))
     {
