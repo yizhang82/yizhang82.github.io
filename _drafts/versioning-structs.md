@@ -35,7 +35,9 @@ get_super_accurate_time(&super_accurate_time);
 
 So far so good.
 
-Now imagine your API is shipped in a shared dynamic library (DLL, so, dylib, etc), and now you've shipped a new version of your API and added 3 fields hour/minute/second, since there are customers out there that cares about those things :)
+Now imagine your API is shipped in a shared dynamic library (DLL, so, dylib, etc), and now you've shipped a new version of your API and added 3 fields hour/minute/second...
+
+<!--more-->
 
 ```c
 struct super_accurate_time
@@ -149,3 +151,10 @@ As you can see, by pasting different versions of struct and name it as _v1, _v2,
 
 * It's easy to see the history - all the histories are there in the code.
 
+## What's the trade-off
+
+Nothing is perfect and everything has trade-off. For better versioning capabilities, this approach has a few drawbacks:
+
+* Client needs to set size properly before making any calls that send/receive such structs. It's a widely accepted convention so as long as it is properly documented for each API it should be acceptable.
+
+* Such structs can only be passed via pointers. Passing by value wouldn't work. In certain architectures structs are always passed as pointers but in others they might be passed as registers, and different size in the caller / caller would result in mismatch. The API designers should keep this rule in mind when designing those APIs - and user would always do the right thing if the APIs are designed correctly with pointers.
