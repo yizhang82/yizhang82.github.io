@@ -23,7 +23,7 @@ One can imagine once you have the entire hardware mapped out to transistors as a
 
 The more common approach is to replicate only the behavior that is observable to the software (the games) and the player. Basically, given the input, you'll need to implement the middle blackbox that gives the exact output.
 
-![nes](nes.png)
+![nes](/assets/img/nes-components.png)
 
 Let's take a look at what happens when you insert a cartridge into the system:
 
