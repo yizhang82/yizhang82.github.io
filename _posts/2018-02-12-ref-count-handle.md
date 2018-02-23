@@ -14,7 +14,7 @@ categories:
 - interop
 ---
 
-Last time we talked about .NET dependent handle. It is a handle that promotes secondary if primary is promoted - as if there is a imaginary reference between them. This time let's take a look at another secret handle - ref-counted handle. A ref-counted handle is a special handle that will become either strong or weak depending on the ref count. It's only used in COM interop today internally in the CLR.
+[Last time](/dependent-handle) we talked about .NET dependent handle. It is a handle that promotes secondary if primary is promoted - as if there is a imaginary reference between them. This time let's take a look at another secret handle - ref-counted handle. A ref-counted handle is a special handle that will become either strong or weak depending on the ref count. It's only used in COM interop today internally in the CLR.
 
 You can find its definition in [gcinterface.h](https://github.com/dotnet/coreclr/blob/dev/release/2.0.0/src/gc/gcinterface.h#L311-L321)
 

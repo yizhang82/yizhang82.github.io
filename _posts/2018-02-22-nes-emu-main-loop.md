@@ -13,7 +13,9 @@ categories:
 - emulator
 ---
 
-## Emulating hardware using software
+In [last post](/nes-emu-overview) I've talked how one would start writing a emulator. Now it's time to dive a bit deeper to see how we write the main loop to drive the emulation.
+
+<!--more-->
 
 Fundamentally, a emulator is a software that attempts to replicate the behavior of hardware.
 
