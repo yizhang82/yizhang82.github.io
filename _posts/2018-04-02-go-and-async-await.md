@@ -1,13 +1,28 @@
+---
+layout: post
+title:  "Does Go need async/await?"
+date:   2018-04-02
+description: Does the go language need async/await support?
+permalink: go-and-async-await
+comments: true
+excerpt_separator: <!--more-->
+categories:
+- async
+- go
+- concurrency
+---
 
-# Do you need async/await in Go?
+Recently I've been spending a bit of time playing with Go language. Coming from a C++ and C# background, I've been wondering what does C# async await (C++ coroutines, or node.js await/promise - pick your choice), would look like in Go. 
 
-Recently I've been spending a bit of time looking into Go concurrency related API designs. And coming from a C++ and C# background, I've been wondering what does C# async await, or C++ coroutines (or node.js await/promise), would look like in Go. After a bit of research, I believe the answer is: 
+It turns out go does not need async/await - every thing can be synchronous by default. 
 
-Go does not need async/await - every thing can be synchronous by default.
+Let me explain why I arrived at this conclusion. 
 
-Let me explain why I arrived at this conclusion. But before that, let's take a look at why we need the C# await / C++ coroutine pattern in the first place.
+But before that, let's take a look at why we need the async/await in the first place.
 
-## Living in a synchronous world
+<!--more-->
+
+## Sync everything
 
 Ever since the introduction of threads, there have been many different models of how you write concurrent code in different languages.
 
@@ -27,6 +42,8 @@ completionEvent.wait();
 ```
 
 This is pretty straightforward. But what's the downside?
+
+Note it's not about wasting CPU resources. When a thread is blocked in waiting, OS is smart enough to suspend the thread, send it to a waiting list, and will wake it up if the resource it is waiting for get signaled. So it should not consume any CPU resources at all once it went to a deep sleep.
 
 Basically, it comes down to cost of threads. Every time when a thread is blocked in waiting, if you want to do new work, you need to create new threads. This is even true if you have a thread pool - just imagine if every single one of them is blocked - and you still need to inject a new thread into the thread pool, essentially growing the pool.
 
@@ -77,7 +94,7 @@ OnSaveComplete2()
 
 ```
 
-This looks pretty ugly. You can free up the thread to do other work, but the price you are paying is to break up your code into smaller, disjoint chunks. Your thread also becomes a giant switch/case.
+This looks pretty ugly. You can free up the thread to do other work, but the price you are paying is to break up your code into smaller, disjoint chunks. Your thread also becomes a giant switch/case, or a bunch of small `onThisEventDoThat` methods (which is really a switch/case in disguise).
 
 ## Callback hell
 
@@ -106,7 +123,7 @@ file.write(buffer, () => {
 
 ```
 
-This is commonly known as "callback hell". The code is less disjointed than the event version (they are grouped together, after all), but the nesting makes it pretty awkward.
+This is commonly known as "callback hell". The code is less disjointed than the event version (they are grouped together, after all), but the nesting makes it pretty awkward. This is most often seen in JavaScript code, but other languages/framework can got into this situation as well (`boost.asio`, for example). 
 
 ## async / await
 
@@ -122,15 +139,15 @@ await file.write(buffer3);
 
 Under the hood, the compiler creates a state machine that maintains where you are exactly (before first write, after first write, after 2nd write, etc), and can suspend when the IO is in progress, therefore free the thread to do more work, and resume when the IO is completed.
 
-This is better than the models we have earlier that programmer writes (as if) synchronous code, and threads are not wasted because once suspended thread can do other work. But there are also unfortunate costs:
+This is better than the models we have earlier that programmer writes (as if) synchronous code, and threads are not wasted because once "suspended" (in quotes because the thread doesn't suspend in the OS sense - it got "reused") thread can do other work. But there are also unfortunate costs:
 
-* async is infectious - any code that uses async needs to be called from async code (async all the way up) until at certain boundaries (thread start function, event loop, etc) where magic happens. Long story short, the reason being that the entire async call chain needs to participate in the suspension/resume process and create their own state machine in each level.
+* Async is infectious - any code that uses async needs to be called from async code (async all the way up) until at certain boundaries (thread start function, event loop, etc) where magic happens. Long story short, the reason being that the entire async call chain needs to participate in the suspension/resume process and create their own state machine in each level.
 
-* compiler gets much more complicated and not all features work. Because state machines.
+* Compiler gets much more complicated and not all features work. Because state machines.
 
-* debugging is challenging without debugger support for async. Without them, you can easily see unrelated function show up in the same callback, because resuming essentially hijacks the stack to run another function, and this can nest very deep.
+* debugging is challenging without debugger support for async. Without them, you can easily see unrelated function show up in the same callback, because resuming essentially hijacks the stack to run another function, and this can nest very deep. Interestingly you can also run into stack overflow more often...
 
-* there is non-trivial cost associated with async/await - every function now returns a task, suspension needs to allocate a task and return all the way up, code needs to now maintain additional states for state machine...
+* there is non-trivial cost associated with async/await - every function now returns a task, "suspension" needs to allocate a task and return all the way up (which is why you need to have `async` keyword all the way up in the call chain - they all need to participate), code needs to now maintain additional states for state machine...
 
 Note async/await is a very complicated topic and probably worth a separate post to dive into. But for now what we talked about is probably good enough for this post.
 
@@ -158,4 +175,8 @@ file.write(buf3)
 
 Internally, `file.write` can be implemented using `sync.Cond` or a channel - it naturally suspends and go can reschedule another go routine to run on this hardware thread if it needs to block.
 
-Of course, go routines is not without its own set of challenges - it's difficult to write a good scheduler in user mode that works in all cases (you can't preempt - everything is cooperative), growing stack tends to be rather expensive. Interestingly, infinite recursion can make your computer run out of memory in earlier version of Go, because the stack is growable infinitely. Either way, in my opinion Go's model greatly simplifies asynchronous programming (not to mention channels) byb allowing programmers to write synchronous code, with often superior performance, and that alone is a great reason to give Go a try.
+Of course, go routines is not without its own set of challenges - it's difficult to write a good scheduler in user mode that works in all cases (you can't preempt - everything is cooperative), growing stack tends to be rather expensive. Interestingly, infinite recursion can make your computer run out of memory in earlier version of Go, because the stack is growable infinitely. Either way, in my opinion Go's model greatly simplifies asynchronous programming (not to mention channels) by allowing programmers to write synchronous code, with often superior performance, and that alone is a great reason to give Go a try.
+
+## Conclusion
+
+Go in my opinion is a great language that got many things right - it is not afraid to make bold and sometimes contraversial choices, and is not yet another C# or Java (means that they are main-stream languages that made a lot of safe, main-stream choices). The most brilliant part is definitely concurrency. Having said that, there are also things I don't agree with. Maybe save that for another go language post. Thanks for reading!
