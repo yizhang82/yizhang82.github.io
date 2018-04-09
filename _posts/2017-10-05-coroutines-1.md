@@ -3,16 +3,19 @@ layout: post
 title:  "Writing your own C++ coroutines: getting started"
 date:   2017-10-05
 categories:
+
 - C++
 - coroutines
 - async
 - await
 - future
 - promise
+- concurrency
+
 permalink: cpp-coroutines-basic-concepts
 comments: true
-description: Discuss high-level concepts when 
----  
+description: Discuss high-level concepts with C++ coroutines
+---
 
 I've been spending some time looking at how to wrap some of our existing C API that is based on completion callbacks, with C++ coroutines. I just got it working tonight and I thought I'd document what I've learned in this process and hopefully help other folks. My focus is the stackless coroutine / resumable functions proposed by Gor Nishanov et al and it is supported by Microsoft VC++ and Clang. I won't be talking about boost::coroutine. I also won't be talking about how to *use* coroutines - this is about how to write your own light-weight coroutine plumbing for library authors.
 

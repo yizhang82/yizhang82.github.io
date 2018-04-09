@@ -4,6 +4,7 @@ title:  "Calling node.js sqlite callback function using promise and await "
 date:   2017-10-24
 categories:
 - javascript
+- concurrency
 - promise
 - await
 permalink: async-sqlite-as-promise
