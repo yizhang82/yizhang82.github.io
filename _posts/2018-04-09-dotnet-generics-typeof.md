@@ -24,7 +24,7 @@ Obviously if there is no code sharing at all, each method instantiation are diff
 
 Before we dive into the implementation, let's take a first crack at this problem and see what are the challenges.
 
-<!-- more -->
+<!--more-->
 
 ## Interview Challenge: Implement typeof(T) for CLR / .NET
 
