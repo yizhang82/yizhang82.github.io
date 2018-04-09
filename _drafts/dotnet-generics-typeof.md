@@ -1,19 +1,25 @@
 
 # typeof(Secret)
 
-In [last post](http://yizhang82.me/dotnet-generics-sharing) we've talked about how .NET does code sharing for reference types. This time let's take a look at how `typeof(T)` does its black magic. In particular, how does the code knows what `typeof(T)` is, in the presence of code sharing. If there is no code sharing at all, each method instantiation are different and the code would be instantiated with the correct `typeof(T)` code where T is a real type, it obviously would "just work".
+In [last post](http://yizhang82.me/dotnet-generics-sharing) we've talked about how .NET does code sharing for reference types. This time let's take a look at how `typeof(T)` does its black magic. In particular, how does the code knows what `typeof(T)` is, in the presence of code sharing? 
+
+Obviously if there is no code sharing at all, each method instantiation are different and the code would be instantiated with the correct `typeof(T)` code where T is a real type, it obviously would "just work".
 
 Before we dive into the implementation, let's take a first crack at this problem and see what are the challenges.
 
-## Generic method
+<!-- more -->
 
-For the following code:
+## Interview Challenge: Implement typeof(T) for CLR / .NET
+
+Let's consider the following code:
 
 ```cs
+
 class Foo
 {
     void Func<T>(T obj) { Console.WriteLine(typeof(T)); }
 }
+
 ```
 
 One obvious idea is to just get T from the argument:
@@ -63,15 +69,15 @@ class Foo<T>
 }
 ```
 
-So looks like we can't really always rely on the argument/this pointer inside the function to figure out the T type (except for instance methods on generic types where we can use `this` pointer). 
+So looks like we can't really always rely on the argument/this pointer inside the function to figure out the T type (except for instance methods on generic types where we can use `this` pointer).
 
-To support these cases, you need to think like a runtime/compiler dev - if there isn't enough information in the method itself, change the caller to pass it in! Just imagine the compiler (JIT, or .NET native) could work with the runtime to figure out these are special methods that needs "assistance", and needs to change the call site (fancy term for where the call happens in the caller code) to insert a magic parameter that carries additional information about the type arguments. .NET JIT/Runtime often employs tricks like this which is called "secret argument".
+To make those cases work, you need to think like a runtime/compiler dev - if there isn't enough information in the method itself, change the caller to pass it in! Just imagine the compiler (JIT, or .NET native) could work with the runtime to figure out these are special methods that needs "assistance", and needs to change the call site (fancy term for where the call happens in the caller code) to insert a magic parameter that carries additional information about the type arguments. .NET JIT/Runtime often employs tricks like this which is called "secret argument" (spoiler alert for futher posts: interop IL stubs also does it - due to the same reason thta is code sharing).
 
 ## Under the hood
 
 Internally, .NET runtime supports 3 kinds of generic lookup:
 
-1. Look up generic from `this`
+1. Look up generic argument from `this`
 2. Look up generic argument from secret `InstantiatedMethodDesc` parameter
 3. Look up generic argument from secret `MethodTable` parameter
 
@@ -270,7 +276,6 @@ The code looks almost exactly the same as the `this` case - except in that case 
 
 ```asm
 
-C:\TypeOfTest\Program.cs @ 25:
 00007fff`04ff227c 488b4d10        mov     rcx,qword ptr [rbp+10h]       ; SECRET ARGUMENT - the MethodTable
 00007fff`04ff2280 488b4930        mov     rcx,qword ptr [rcx+30h]       ; m_pPerInstInfo
 00007fff`04ff2284 488b09          mov     rcx,qword ptr [rcx]           ; first dict
@@ -290,4 +295,21 @@ C:\TypeOfTest\Program.cs @ 25:
 
 ```
 
+## Conclusion
 
+We've looked at how CLR does its typeof(T) magic through a combination of looking at this pointer and secret arguments. Techniques like these are pretty effective and there honestly aren't a lot of options if you want to share the code. And in order to share the code, there are additional cost involves when doing seemingly simple things like typeof(T) - nothing is free. In next post we'll dig a bit deeper into generic dictionaries and other dark secrets with secret argument passing. 
+
+Two interesting questions that you can probably think about:
+
+* How do you make this work with secret type arguments and also make it performant?
+
+```cs
+
+class Foo<T>
+{
+    public void Func() { Console.WriteLine(List<IComparable<T>>); }
+}
+
+```
+
+* How do you make secret argument work with delegates?
