@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "typeof(T) - the magic behind .NET generics"
+title:  "typeof(TSecret) - the secret magic behind .NET generics"
 description: How typeof(T) works in .NET generics
 permalink: dotnet-generics-typeof-t
 comments: true
@@ -14,7 +14,7 @@ categories:
 - dotnet
 ---
 
-## typeof(Secret)
+## typeof(TSecret) - the secret magic behind .NET generics
 
 In [last post](http://yizhang82.me/dotnet-generics-sharing) we've talked about how .NET does code sharing for reference types. This time let's take a look at how `typeof(T)` does its black magic.
 
