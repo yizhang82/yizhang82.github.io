@@ -1,7 +1,22 @@
+---
+layout: post
+title:  "typeof(T) - the magic behind .NET generics"
+description: How typeof(T) works in .NET generics
+permalink: dotnet-generics-typeof-t
+comments: true
+excerpt_separator: <!--more-->
+categories:
+- C#
+- CLR
+- netcore
+- typesystem
+- generics
+- dotnet
+---
 
 ## typeof(Secret)
 
-In [last post](http://yizhang82.me/dotnet-generics-sharing) we've talked about how .NET does code sharing for reference types. This time let's take a look at how `typeof(T)` does its black magic. 
+In [last post](http://yizhang82.me/dotnet-generics-sharing) we've talked about how .NET does code sharing for reference types. This time let's take a look at how `typeof(T)` does its black magic.
 
 In particular, how does the code knows what `typeof(T)` is, in the presence of code sharing?
 
@@ -323,10 +338,10 @@ class Foo<T>
 
 * How do you make secret argument work with delegates?
 
-I also plan to write more about CLR internals going forward. Some topics come to mind:
+I also plan to write more about CLR internals going forward that I don't see other folks have written yet. Some topics come to mind:
 
 * How .NET implements marshaling, p/invokes and COM
 
 * How .NET supports WinRT
 
-* How default interface method is implemented (at least in my prototype)
+* How default interface method is implemented in runtime (https://github.com/dotnet/coreclr/issues/10504)
