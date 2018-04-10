@@ -156,10 +156,10 @@ Assuming we have the following code:
         }
     }
 
-    // Case #4: Non class, static generic method
-    class T4<T>
+    // Case #4: Non-generic class, static generic method
+    class T4
     {
-        public static void Func()
+        public static void Func<T>()
         {
             Console.WriteLine(typeof(T));
         }
@@ -319,9 +319,11 @@ The code looks almost exactly the same as the `this` case - except in that case 
 
 ```
 
+We won't look at case #4 in detail here - it's not hard to conclude that it is relying on `CORINFO_LOOKUP_METHODPARAM`.
+
 ## Conclusion and what's next
 
-We've looked at how CLR does its typeof(T) magic through a combination of looking at this pointer and secret arguments. The runtime and compiler are in this together and they collaborate to make scenarios like this work. Like everything in life and in compiler science, everything has a trade off. In order to share the code, there are additional cost involves when doing seemingly simple things like typeof(T) - we need to do more work both statically and at runtime (by static I mean compile time - which can be at runtime if we are talking about JIT). In next post we'll dig a bit deeper into generic dictionaries and other dark secrets with secret argument passing.
+We've looked at how CLR does its typeof(T) magic through a combination of looking at this pointer and secret arguments. The runtime and compiler are in this together and they collaborate to make scenarios like this work. Like everything in life and in computer science, everything has a trade off. In order to share the code, there are additional cost involves when doing seemingly simple things like typeof(T) - we need to do more work both statically and at runtime (by static I mean compile time - which can be at runtime if we are talking about JIT). In next post we'll dig a bit deeper into generic dictionaries and other dark secrets with secret argument passing.
 
 Two interesting questions that you can probably think about:
 
@@ -331,7 +333,7 @@ Two interesting questions that you can probably think about:
 
 class Foo<T>
 {
-    public void Func() { Console.WriteLine(List<IComparable<T>>); }
+    public void Func() { Console.WriteLine(typeof(List<IComparable<T>>)); }
 }
 
 ```
