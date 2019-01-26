@@ -8,8 +8,8 @@ yizhang82:
   # Used at the bottom of each page and at the top of the `about` layout
   # Markdown enabled, can use multiple paragraphs (enabled by `|`)
   about:             |
-    Principal Software Engineer working on Windows Azure focusing on transactional data programming and storage solution across multiple languages. 
-    Previously worked in .NET / CLR team for ~10 years on full .NET, .NET Core, and .NET Native. 
+    Software Engineer in Facebook CoreData team - focusing on making [MySQL](https://github.com/facebook/mysql-5.6) / [MyRocks](http://myrocks.io/) and [RocksDB](https://github.com/facebook/rocksdb) working better together.
+    Previously worked as a Principal Engineer / Principal Engineering Manager in Microsoft, in Azure [Service Fabric](https://github.com/Microsoft/service-fabric) focusing on ReliableCollections and stateful services, and before that NET / CLR team for ~10 years on full .NET, [.NET Core](https://github.com/dotnet/coreclr), and .NET Native. 
     Amature piano player, pasionate gamer, and proud dad.
 
   # This photo will be used in the about section
