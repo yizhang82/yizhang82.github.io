@@ -115,43 +115,69 @@ In this case, 0x43 = 'C' which is bigger than B, even though A string is smaller
 
 The key to the problem is that you have to compare the two strings by themselves - you can't compare other unrelated data by accident (which is our challenge #2, earlier, if you paid attention). You could pad the strings so that they are equal, if you know the maximum length ahead of time (for example, in SQL VARCHAR has max length), but that can be a waste of space. 
 
-If you dig deeper, one interesting insight is that if you can have a magic special character that is always guarantee to be smaller than the other side no matter what data it had (integer, float, string, etc), then it'll just work. Of course, we had no such luxury as the smallest byte is 0, and any data can also be 0. But that does provide some additional hint: what if we can artifically artifically inject such marker into the string such that the one that is longer has a bigger byte marker?
+If you dig deeper, one interesting insight is that if you can have a magic special character that is always guarantee to be smaller than any valid contents in the other string before it ends, then it'll just work. In many cases, we had no such luxury as strings may have embedded NULLs. But that does provide some additional hint: what if we can artifically inject such marker into the string such that the one that is longer has a bigger byte marker?
 
 ```
 A: A, A, A, A, A, A, 0x0
-B: B, B, B, B, B, B, 0x1, B, B, B, 0x0
+B: A, A, A, A, A, A, 0x1, B, B, B, 0x0
 ```
 
 In the above case, A ends with 0x0, while B injects 0x1 as 7th char, making sure it is bigger than A when A ends. Note that 0x1 in this case means there are more data after this, so the encoder/decoder need to take that into account. This looks nice, but we do need to make sure the markers are always at the same place. In order to do that, we can pad/break the strings to split them into predictable fixed length parts with a marker at the last byte. Let's say if we break it apart at 6 characters, it'll be exactly like this:
 
 ```
 A: A, A, A, A, A, A, 0x0
-B: B, B, B, B, B, B, 0x1, B, B, B, 0x20, 0x20, 0x20, 0x0
+B: A, A, A, A, A, A, 0x1, B, B, B, 0x0, 0x0, 0x0, 0x0
 ```
 
-Note the 4 0x20 (' ') padding in between, making sure we break the strings every 6 characters. Now, any experienced programmer will tell you that you should always ends things at power of 2 (so that it works better with cache, alignment, etc), so 8/16/32/... would be obviously a better choice. For now let's go with 8 just to make it easier:
+Note the 4 0x0 (' ') padding in between, making sure we break the strings every 6 characters. Now, any experienced programmer will tell you that you should always ends things at power of 2 (so that it works better with cache, alignment, etc), so 8/16/32/... would be obviously a better choice. For now let's go with 8 just to make it easier:
 
 ```
-A: A, A, A, A, A, A, 0x20, 0x20,  0x0
-B: B, B, B, B, B, B, B,    0x20,  0x1, B, B, 0x20, 0x20, 0x20, 0x20, 0x20, 0x0
+A: A, A, A, A, A, A, 0x0, 0x0,  0x0
+B: A, A, A, A, A, A,   A,   A,  0x1, B, B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 ```
 
 A bit wasteful, but much better than storing the entire string padded to max length. Also, keep in mind that this encoding supports storing NULL characters as the 0 at every 8th character has special meaning. 
 
 But we are not done yet. Do you see there is one more problem?
 
-We are padding the strings with 0x20, and now the strings have some unwanted 0x20 characters padded which we are not able to distingush with actual spaces. Fortunately we still have plenty of run away with the encoding, we can put 1~8 there to indicate number of real characaters (not the padding):
+We are padding the strings with 0x0, and now the strings have some unwanted 0x0 characters padded which we are not able to distingush with actual spaces. Fortunately we still have plenty of run away with the encoding, we can put 1~8 there to indicate number of real characaters (not the padding):
 
 ```
-A: A, A, A, A, A, A, 0x20, 0x20,  0x0
-B: B, B, B, B, B, B, B,    0x20,  0x2, B, B, 0x20, 0x20, 0x20, 0x20, 0x20, 0x0
+A: A, A, A, A, A, A, 0x0, 0x0,  0x0
+B: A, A, A, A, A, A,   A,   A,  0x2, B, B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 ```
 
-Of course, the padding character 0x20 can be anything you want, such as 0.  
+But this isn't quite right yet, this can easily get broken (thanks for [Thief](https://disqus.com/by/disqus_EhHho2AGRq/) pointing it out) as the marker themselves get into comparison:
+
+```
+A: A, A, A, A, A, A, A, A, 0x3, A, A,   A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
+B: A, A, A, A, A, A, A, A, 0x2, B, B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
+```
+
+To fix this, instead of signaling the number of characters in next segment, it can represent the current number of characters:
+
+```
+A: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2
+B: A, A, A, A, A, A, A, A, 0x8, A, A,   B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3
+```
+
+For non-NULL characters, it'll work as any other character will be bigger. For embedded NULL characters, either the last non-NULL character would help:
+
+```
+A: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,  0x2
+B: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0,   A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4
+```
+
+Or for pure NULL padding case, the last 0x2/0x4 will help disambuigate any difference. 
+
+```
+A: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2
+B: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4
+```
 
 In summary, we break down the string in the chunk of 8/16/32/... characters and using the every Nth character a special marker that indicates:
 1. 0 = string ends
-2. N = the string still has N real characters, rest can be padding character
+2. M = the current M character segment has M characters 
 
 ## What about non-ASCII strings?
 
