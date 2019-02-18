@@ -194,8 +194,8 @@ A, A, A, A, A, 0x0, 0x0, 0x5
 ```
 
 In summary, we break down the string in the chunk of 8/16/32/... characters and using the every Nth character a special marker that indicates:
-1. 0 = string ends
-2. M = the current N-1 character segment has M (or M-1, if M = N) characters. If M = N there are more characters to come. 
+1. 1 ~ N - 1 : the number of characters in the current segment. The rest is 0x0 padding.
+2. N : the current segment is full and there are more characters
 
 ## What about non-ASCII strings?
 
