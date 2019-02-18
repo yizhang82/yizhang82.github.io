@@ -213,3 +213,5 @@ In this post I've discussed approaches to encode your data in a way that is sort
 
 However, we are not quite done yet. There is one more interesting scenario we can look at: floats. This is a non-trivial topic as we need to dive into the binary format of floats/doubles. Hope I'll see you next time! 
 
+> EDIT NOTE:
+> This article has been updated to address some bugs in the examples and in the encoding. 
