@@ -132,8 +132,8 @@ B: A, A, A, A, A, A, 0x1, B, B, B, 0x0, 0x0, 0x0, 0x0
 Note the 4 0x0 (' ') padding in between, making sure we break the strings every 6 characters. Now, any experienced programmer will tell you that you should always ends things at power of 2 (so that it works better with cache, alignment, etc), so 8/16/32/... would be obviously a better choice. For now let's go with 8 just to make it easier:
 
 ```
-A: A, A, A, A, A, A, 0x0, 0x0,  0x0
-B: A, A, A, A, A, A,   A,   A,  0x1, B, B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
+A: A, A, A, A, A, A, 0x0, 0x0
+B: A, A, A, A, A, A,   A, 0x1, B, B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 ```
 
 A bit wasteful, but much better than storing the entire string padded to max length. Also, keep in mind that this encoding supports storing NULL characters as the 0 at every 8th character has special meaning. 
@@ -143,41 +143,59 @@ But we are not done yet. Do you see there is one more problem?
 We are padding the strings with 0x0, and now the strings have some unwanted 0x0 characters padded which we are not able to distingush with actual spaces. Fortunately we still have plenty of run away with the encoding, we can put 1~8 there to indicate number of real characaters (not the padding):
 
 ```
-A: A, A, A, A, A, A, 0x0, 0x0,  0x0
-B: A, A, A, A, A, A,   A,   A,  0x2, B, B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
+A: A, A, A, A, A, A, 0x0, 0x0
+B: A, A, A, A, A, A,   A, 0x2, B, B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 ```
 
 But this isn't quite right yet, this can easily get broken (thanks for [Thief](https://disqus.com/by/disqus_EhHho2AGRq/) pointing it out) as the marker themselves get into comparison:
 
 ```
-A: A, A, A, A, A, A, A, A, 0x3, A, A,   A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
-B: A, A, A, A, A, A, A, A, 0x2, B, B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
+A: A, A, A, A, A, A, A, 0x3, A, A,   A, 0x0, 0x0, 0x0, 0x0, 0x0
+B: A, A, A, A, A, A, A, 0x2, B, B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 ```
 
-To fix this, instead of signaling the number of characters in next segment, it can represent the current number of characters:
+To fix this, instead of signaling the number of characters in next segment, it can represent the number of characters in the current segment:
 
 ```
-A: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2
-B: A, A, A, A, A, A, A, A, 0x8, A, A,   B, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3
+A: A, A, A, A, A, A, A, 0x7, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2
+B: A, A, A, A, A, A, A, 0x7, A, A,   B, 0x0, 0x0, 0x0, 0x0, 0x3
 ```
 
 For non-NULL characters, it'll work as any other character will be bigger. For embedded NULL characters, either the last non-NULL character would help:
 
 ```
-A: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,  0x2
-B: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0,   A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4
+A: A, A, A, A, A, A, A, 0x7, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2
+B: A, A, A, A, A, A, A, 0x7, A, A, 0x0,   A, 0x0, 0x0, 0x0, 0x4
 ```
 
 Or for pure NULL padding case, the last 0x2/0x4 will help disambuigate any difference. 
 
 ```
-A: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2
-B: A, A, A, A, A, A, A, A, 0x8, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4
+A: A, A, A, A, A, A, A, 0x7, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2
+B: A, A, A, A, A, A, A, 0x7, A, A, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4
+```
+
+This is still not quite perfect, though. If a string happens to end at N boundary:
+
+```
+A, A, A, A, A, A, A, 0x7, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
+```
+
+The final N bytes are wasted just to provide the indicator. The fix is simple: instead of N - 1 indicating more characters, we can have two cases:
+1. N - 1 : the segment is full and there are no more characters
+2. N : the segment is full and there are more characters
+
+To illustrate this idea:
+
+```
+A, A, A, A, A,   A,   A, 0x8, B, B, B, 0x0, 0x0, 0x0, 0x0, 0x3
+A, A, A, A, A,   A,   A, 0x7 
+A, A, A, A, A, 0x0, 0x0, 0x5  
 ```
 
 In summary, we break down the string in the chunk of 8/16/32/... characters and using the every Nth character a special marker that indicates:
 1. 0 = string ends
-2. M = the current M character segment has M characters 
+2. M = the current N-1 character segment has M (or M-1, if M = N) characters. If M = N there are more characters to come. 
 
 ## What about non-ASCII strings?
 
