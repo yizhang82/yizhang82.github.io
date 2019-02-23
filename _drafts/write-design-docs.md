@@ -10,16 +10,23 @@ categories:
 - career
 ---
 
-## W
+## Why I love writing design documents
 
 1. It is a excellent way to structure your thoughts
 
 2. It is a one true place to track your design points
 
-3. It documents your major design points
+3. It documents your major design decision
 
-4. It is a great source to get new people up to speed
+4. It captures the discussion
 
+5. It provides invaluable context / background
+
+6. 
+
+8. It is a starting point for discussion / review
+
+9. It is a great resource to get new people up to speed
 
 ## How to write good design docs
 
@@ -39,13 +46,11 @@ On the other hand, it is often much harder to understand *why* things are done i
 
 2. Provide context/background/history
 
-This is somewhat related to "Why" but is important enough that deserves its own section. Often times, when a feature is being developed, a project getting started, it is not being done in a vaccum. 
-
+This is somewhat related to "Why" but is important enough that deserves its own section. Often times, when a feature is being developed, a project getting started, it is not being done in a vaccum. Maybe it is part of a company/org wide initiative, maybe it is part of project A, maybe it aligns better with feature Y which is being worked on, or Z team needs this feature for whatever business reason. These provides valuable insight on why the feature is done a certain way, and invaluable for future fixes/involving/changes. 
 
 3. Evaluate your options
 
+If there is only one obvious way to go about implementing a feature, it probably doesn't need a design doc anyway. It is obvious that you can figure out the implementation choice from the doc, but the road not taken can be even more important. Computer engineering / design is about trade-offs and there is no perfect solution - only the best for the job at hand. The best design docs carefully lays out the options and describe the trade-offs / pros and cons in each design, and find the best one that has the right trade-off for the current project.
+
 4. Capture the data and back it up
 
-5. It captures It starts a conversation 
-
-2.  
