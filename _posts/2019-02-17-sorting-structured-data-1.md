@@ -2,7 +2,7 @@
 layout: post
 title:  "Sorting structured data in a unstructured way using memcmp-friendly encoding"
 description: Sorting structured data in a unstructed way using memcmp-friendly encoding
-permalink: 
+permalink: sorting-structured-data-1
 comments: true
 excerpt_separator: <!--more-->
 categories:
