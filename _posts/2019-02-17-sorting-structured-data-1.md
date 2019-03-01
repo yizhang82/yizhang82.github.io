@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Sorting structured data in a unstructured way using memcmp-friendly encoding"
-description: Sorting structured data in a unstructed way using memcmp-friendly encoding
+description: Sorting structured data in a unstructed way using memcmp-friendly encoding part 1
 permalink: sorting-structured-data-1
 comments: true
 excerpt_separator: <!--more-->
@@ -21,9 +21,7 @@ class Data {
   virtual int Compare(void *left, void *right) = 0;
   virtual int GetLength(void *data) = 0;
 };
-
-class UInt32_Data : public Data {
- public:
+class UInt32_Data : public Data { public:
   virtual int Compare(void *left, void *right) {
     auto left_int = reinterpret_cast<uint32_t *>(left);
     auto right_int = reinterpret_cast<uint32_t *>(right);
