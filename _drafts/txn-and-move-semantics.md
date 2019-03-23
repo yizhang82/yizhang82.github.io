@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Fun C++ bug #1 - transactional objects should have move semantics"
+title:  "Fun C++ bug - transactional objects should have move semantics"
 description: Objects with transactional semantics need move support
 permalink: 
 comments: true
@@ -61,7 +61,7 @@ for (auto txn_file : txn_files) {
 
 // If all is well, commit
 for (auto txn_file : txn_files) {
-  do_some_work(txn_file.get_file());
+  txn_file.commit();
 }
 
 ```
@@ -164,4 +164,7 @@ class TxnFile {
 
 ```
 
+## A bit of rant
+
+OK. We are finally done. Personally I think C++ has grown to the point that it is too complicated for most people and the interaction between different features can lead to really surprising behaviors. Even if you want to write a simple class there is already too much things to consider (copy/move semantics). And don't get me started on template meta programming. However, if you stick to a relatively sane subset of C++, maybe you'll be fine. Just maybe. I've been working in large C++ codebases profesionally for 14+ years and I still make stupid mistakes.
 

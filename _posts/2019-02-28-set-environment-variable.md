@@ -201,6 +201,8 @@ namespace set_env
 }
 ```
 
-Now if you are interested to dig in a bit more, here are some bonus questions:
+Now if you are interested to dig in a bit more, here are some bonus questions for your consideration:
 1. Does the same problem happen in Windows? And why/why not?
 2. Why does the above code above use `Marshal.PtrToStringAnsi` instead of just have `getenv` returning the string? 
+
+That's all for now. Thanks for reading!
