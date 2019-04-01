@@ -2,7 +2,7 @@
 layout: post
 title:  "Fun C++ bug - transactional objects should have move semantics"
 description: Objects with transactional semantics need move support
-permalink: 
+permalink: move-semantics 
 comments: true
 excerpt_separator: <!--more-->
 categories:
