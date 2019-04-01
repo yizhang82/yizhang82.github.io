@@ -23,19 +23,19 @@ After a few weeks of research and practice, I've been happyily chugging along wi
 
 ## I miss Visual Studio
 
-Let's get this one out of the way first. There is *no* replacement for Visual Studio. Period. The code completion (or Intelli-Sense) and debugging is simply unmatched by anything else in the market. VS Code is awesome in terms of just browsing code and doing some occasional debugging, but for writing code it is just OK. Vim is good for text editing, and with plugins you can get some basic stuff to work, but again it's no where near the quality of experience of Visual Studio. Usually it's a love/hate relationship with Visual Studio - it's kinda slow and some times buggy, but you can't live without it. Well, you can, but you don't want to. 
+Let's get this one out of the way first. There is *no* replacement for Visual Studio. Period. The code completion (or Intelli-Sense) and debugging is simply unmatched by anything else in the market. VS Code is awesome in terms of just browsing code and doing some occasional debugging, but for writing code it is just OK as the "inteli-sense" (forgive my Microsoft VS Jargon) can be a hit or miss. Vim is good for text editing, and with plugins you can get some basic stuff to work, but again it's no where near the quality of experience of Visual Studio. Usually it's a love/hate relationship with Visual Studio - it's kinda slow and some times buggy, but you can't live without it. Well, you can, but you don't want to. 
 
 Nowadays I use vim or VS Code / Atom for writing code, and gdb for debugging.
 
 ## Debugging using GDB is fine
 
-Being an reasonably experienced WinDbg user, Gdb's command line taking a bit getting used to, but that's about it. GDB also supports a TUI mode that shows the integrated text window for source/register/etc and a command window. It's not great but you can get the job done.
+Being an reasonably experienced WinDbg user, Gdb's command line taking a bit getting used to, but that's about it. GDB also supports a TUI mode that shows the integrated text window for source/register/etc and a command window. It's not great as many simple key bindings stop working in that mode (taken over by the TUI component) but as long as I can see a source code "window" over SSH I'm happy.
 
 # TMUX is awesome
 
 TMUX is a terminal multiplexer. With TMUX you won't lose your working state - even if you disconnect from SSH, just 'tmux attach' you'll resume where you left off. In this sense it is equivalent to a Windows Remote Desktop session. 
 
-The most powerful part is thIt also allow you to break the terminal into multiple panes and windows, and this way you don't have to leave the terminal and can easily switch between many different tasks. No more need to manage windows - everything is within the terminal. It's like a virtual desktop for terminals.
+The most powerful part is that it also allow you to break the terminal into multiple panes and windows, and this way you don't have to leave the terminal and can easily switch between many different tasks with quick shortcuts. No more need to manage windows - everything is within the terminal. It's like a virtual desktop for terminals. It's build in the way that you barely had to touch the mouse anymore. Well, until you move to the browser, that is. 
 
 # VIM ftw
 
@@ -63,7 +63,7 @@ This is the list of plugins I use:
 
 ## SSH is the old Remote Desktop
 
-In my old job I usually "remote" into my development machines at office - and "remote" means "Windows Remote Desktop". In a reasonable connection it is actually quite nice - there is little lag and you almost feel you are working on a native machine, with all the graphical UI - it's really amazing.
+In my old job I usually "remote" into my development machines at office - and "remote" means "Windows Remote Desktop". In a reasonable connection it is actually quite nice - there is little lag and you almost feel you are working on a local machine, with all the graphical UI - it's really amazing.
 
 With linux, you fallback to the good old text-based SSH. It's kinda amazing in its own way that you can have text-based remote protocol for complicated full screen programs like vim. You don't get graphical UI this way - but for the most part you don't need to, and it's usually blazing fast. 
 
@@ -77,25 +77,22 @@ For now I'm using ZSH with [oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh
 * Plugins that shows me all kind of status, such as git status, any pending background process, how long the last command took, etc. 
 * Auto-suggestion. It automatically suggest the full command based on best match and it grays out the rest of the command that you didn't type. It's simple but almost feels like magic when you see it for the first time in action. 
 * Syntax highlighting. Enough said.
-* VIM editing. Yes, you can now use VIM commands to edit your shell commands. Just think that you can easily navigate with all the muscle memory you had with vim. 
+* VIM editing. Yes, you can now use VIM commands to edit your shell commands. Just think that you can easily navigate with all the muscle memory you had with vim. This *should* be mandatory in every thing that deal with text editing. 
 
 With all these, and throw in a few custom key bindings, the plain shell / windows command prompt just seems so boring.
 
 # You need to work on your configurations
 
-I find myself spending quite a bit of time tweaking the configurations to make it work better for me - and the time spent paid off. All the different configuration options are indeed quite overwhelming if starting from scratch so I use [Awesome dotfiles](https://github.com/Parth/dotfiles) project as my starting point for tweaking and forked my own version [yizhang82/dotfiles](https://github.com/yizhang82/dotfiles). There are a lot of things that I like about the way the things are setup:
+However, tweaking these tools so that they work for you takes time. I find myself spending quite a bit of time tweaking the configurations to make it work better for me - and the time spent paid off. All the different configuration options are indeed quite overwhelming if starting from scratch so I use [Awesome dotfiles](https://github.com/Parth/dotfiles) project as my starting point for tweaking and forked my own version [yizhang82/dotfiles](https://github.com/yizhang82/dotfiles). There are a lot of things that I like about the way the things are setup:
   * One script to deploy everything - TMUX/ZSH, the entire github repo containing dotfiles, and back them up
-  * Dotfiles are configured to include the settings/scripts from the repo at `~/dotfiles` - this way things can be automatically synchronized through a git pull 
+  * Dotfiles are configured to include the settings/scripts from the repo at `~/dotfiles` - this way things can be automatically synchronized through a git pull. This is actually quite brilliant.  
   * Automatically pulls the github repo every time ZSH starts - so it's always up to date
 
 Of course, many of the configurations there are already pretty good and is perfect as a starting point for my own configurations. 
 
 It contains all my TMUX, ZSH, VIM configurations, and by simplying cloning and running a script it goes into a new machine effortlessly. Most of these is done by the original author and I'm simply tweaking it to my needs.
 
-## Linux is a more developer friendly environment
+## I like it
 
-* There are a lot of great command line development tools available from open source community to help you get the job done
-* There are a lot of customizations you can do to suit your personal development workflow - you just need to do the leg work to find the right one for you and tweak it
-* It is much easier to experiment with a lot of open source projects in Linux as Windows version of them are simply not there or an after thought (requires significant work on getting it to build)
+It did take a bit getting used to, but I'm happy to report that I now feel very much productive roughly on the same level of productivity when I'm working on Windows (if not more). I do miss having a fully integrated Visual Studio experience, but the command line experience (with TMUX, etc) in Linux is so much better that it more than makes up for that. Of course, at the end of the day, what matters is getting the job done - just use the right tool for the job. In a future post I can get into a bit more details with my experience with these tools and share some of my learnings/tips. 
 
-Of course, nothing can quite match the integrated Visual Studio experience, but in practice that experience only holds up for small projects and for large projects it can often get compromised in one way or the other. While in linux the development experience is usually consistent whether it is large project or small. 
