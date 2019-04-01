@@ -2,7 +2,7 @@
 layout: post
 title:  "Byebye Windows - going full linux"
 description: How to version your structs the right way
-permalink: version-structs
+permalink: byebye-windows
 comments: true
 excerpt_separator: <!--more-->
 categories:
