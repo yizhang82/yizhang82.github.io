@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Byebye Windows - going full linux"
-description: How to version your structs the right way
+description: Going linux full time
 permalink: byebye-windows
 comments: true
 excerpt_separator: <!--more-->
