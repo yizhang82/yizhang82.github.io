@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Byebye Windows - making the transition into linux-only"
+title:  "Byebye Windows - going full linux"
 description: How to version your structs the right way
 permalink: version-structs
 comments: true
@@ -11,6 +11,7 @@ categories:
 - linux
 - mac
 - windows
+- productivity
 ---
 
 In my new job, no one cares about windows.
@@ -95,4 +96,6 @@ It contains all my TMUX, ZSH, VIM configurations, and by simplying cloning and r
 ## I like it
 
 It did take a bit getting used to, but I'm happy to report that I now feel very much productive roughly on the same level of productivity when I'm working on Windows (if not more). I do miss having a fully integrated Visual Studio experience, but the command line experience (with TMUX, etc) in Linux is so much better that it more than makes up for that. Of course, at the end of the day, what matters is getting the job done - just use the right tool for the job. In a future post I can get into a bit more details with my experience with these tools and share some of my learnings/tips. 
+
+P.S. I still use Windows at home. I have custom built (by myself) PC that has i7 4770K, 32G RAM, nVidia 2080 RTX mostly for gaming. I think Windows has mostly lost the mindshare of developers these days, but it's still *the* OS for gamers, and will be for quite some time. 
 
