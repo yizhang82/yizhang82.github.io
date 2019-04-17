@@ -2,7 +2,7 @@
 layout: post
 title:  "Doctest - a zero friction unit test framework with just enough features"
 description: "Use doctest in every C++ project you have" 
-permalink: 
+permalink: doctest 
 comments: true
 excerpt_separator: <!--more-->
 categories:

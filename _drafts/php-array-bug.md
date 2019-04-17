@@ -10,7 +10,13 @@ categories:
 - bug
 ---
 
-In my new job I sometimes had to tinker with infrastructure stuff, and quite bit of that is written in PHP for whatever reason... I'm mostly a C++ and C# guy, and my Python/Javascript/Go/Java isn't terrible, but my PHP just sucks. In this case I have a simple function like this: 
+It's time for some PHP fun. 
+
+This is a sentence I never thought I would put in my blog. But here we go.
+
+In my job I sometimes had to tinker with infrastructure stuff, and quite bit of that is written in PHP for whatever reason... I'm mostly a C++ and C# guy, and my Python/Javascript/Go/Java isn't terrible, but I have never properly learned PHP and as a result my PHP is beyond terrible. 
+
+In this case I have a simple function like this: 
 
 ```php
 
@@ -55,11 +61,13 @@ function remove_headers($paths) {
 
 ```
 
-Because `unset` only creates holes but never changes the index of existing items, it works. This basically means PHP doesn't have a real array in true 'C' sense, only dictionaries. However in memory you could have two representations - the optimized array representation when the index is ordered integer starting from 0, and dictionary for everything else.  
+Because `unset` only creates holes but never changes the index of existing items, it works. This basically means PHP doesn't have a real array in true 'C' sense, only dictionaries. However in memory you could have two representations - the optimized array representation when the index is ordered integer starting from 0, and dictionary for everything else, otherwise performance would be terrible.
 
-One interesting take away is that when you are working in a unfamiliar language, it's easy to find yourself to be in basically get-in and get-out mindset - just keep tinkering until you get things working without thinking through the implication of all the language features.
+One interesting take away is that when you are working in a unfamiliar language, it's easy to find yourself to be in basically get-in and get-out mindset - just keep tinkering until you get things working without thinking through the implication of all the language features. This can be a potential time sink. 
+
+This also proves that changing the array/vector/list during iteration is usually a bad idea.
 
 Note to self 1: Find a PHP book to read at some point.
 
-Note to self 2: Don't look for a PHP job. Ever.
+Note to self 2: Don't look for a PHP job. Ever. Oh, wait...
 
