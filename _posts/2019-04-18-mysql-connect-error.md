@@ -30,7 +30,7 @@ Obviously when I write `-p 13010` I meant to tell `mysql` client to connect to s
 [~/mysql]: mysql --help
   -p, --password[=name]
                       Password to use when connecting to server. If password is
-  -P, --port=#        Port number to use for connection or 0 for default to, in
+  -P, --port=#        Port number to use for connection or 0 for default
 ```
 
 So I actually told mysql the password is 13010 instead. Supporting both `-p` and `-P` is a apparently very bad idea.
