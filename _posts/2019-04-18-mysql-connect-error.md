@@ -20,7 +20,7 @@ Enter password:
 ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/lib/mysql/mysql.sock' (2)
 ```
 
-This is typical error many people will run into and you can find many similar posts that talks about the root cause. Let's jump right in.
+This is typical error many people will run into and you can find many similar posts that discuss the problem but few ever got to the bottom of it. Let's jump right in.
 
 ## -p and -P
 
