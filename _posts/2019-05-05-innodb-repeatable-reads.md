@@ -18,7 +18,7 @@ A few days ago I was looking into a deadlock issue that is caused by a behaviora
 
 Before we dig deeper, let's revisit some of the basics of database isolation levels. You can refer to my [earlier post](https://yizhang82.dev/db-isolation-level) for a more detailed explanation / comparison. Database isolation level defines the behavior of data read/write operations within transactions, and those can have a signficant impact to protecting the data integrity of your application. *Repeatable reads* guaratees that you would always observe the same value once you read it, and it would never change unless you've made the change yourself, giving you the illusion that it is exclusively owned by you and there is no one else. Of course, this isn't true in practice as there are pessimistic locking and optimistic locking that defines the behavior when write conflict occurs. 
 
-<!--  -->
+<!--more-->
 
 Anyway, let's look at some concrete examples with InnoDB where the default is repeatable read with pessimistic locking. All the examples below are captured using InnoDB and the discussion are strictly for InnoDB only. For the database engine we care about (MyRocks) I'll talk about it some other time.
 
