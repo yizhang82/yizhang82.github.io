@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en"><!--
+ __  __                __                                     __
+/\ \/\ \              /\ \             __                    /\ \
+\ \ \_\ \   __  __    \_\ \      __   /\_\      __       ___ \ \ \/'\
+ \ \  _  \ /\ \/\ \   /'_` \   /'__`\ \/\ \   /'__`\    /'___\\ \ , <
+  \ \ \ \ \\ \ \_\ \ /\ \L\ \ /\  __/  \ \ \ /\ \L\.\_ /\ \__/ \ \ \\`\
+   \ \_\ \_\\/`____ \\ \___,_\\ \____\ _\ \ \\ \__/.\_\\ \____\ \ \_\ \_\
+    \/_/\/_/ `/___/> \\/__,_ / \/____//\ \_\ \\/__/\/_/ \/____/  \/_/\/_/
+                /\___/                \ \____/
+                \/__/                  \/___/
+
+Powered by Hydejack v8.4.0 <https://hydejack.com/>
+-->
+
+
+
+
+
+
+
+
+
+
+
+<head>
+  
+
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+
+
+
+  
+<!-- Begin Jekyll SEO tag v2.3.0 -->
+<title>typeof(TSecret) - the secret magic behind .NET generics | yizhang82’s blog</title>
+<meta property="og:title" content="typeof(TSecret) - the secret magic behind .NET generics" />
+<meta name="author" content="Yi Zhang" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="How typeof(T) works in .NET generics" />
+<meta property="og:description" content="How typeof(T) works in .NET generics" />
+<link rel="canonical" href="http://localhost:4000/dotnet-generics-typeof-t" />
+<meta property="og:url" content="http://localhost:4000/dotnet-generics-typeof-t" />
+<meta property="og:site_name" content="yizhang82’s blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-04-09T00:00:00-07:00" />
+<script type="application/ld+json">
+{"url":"http://localhost:4000/dotnet-generics-typeof-t","headline":"typeof(TSecret) - the secret magic behind .NET generics","dateModified":"2018-04-09T00:00:00-07:00","datePublished":"2018-04-09T00:00:00-07:00","sameAs":null,"image":null,"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/dotnet-generics-typeof-t"},"name":null,"author":{"@type":"Person","name":"Yi Zhang"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/icons/icon.png"},"name":"Yi Zhang"},"description":"How typeof(T) works in .NET generics","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+  
+
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="yizhang82's blog">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<meta name="application-name" content="yizhang82's blog">
+<meta name="msapplication-config" content="/assets/ieconfig.xml">
+
+
+<meta name="theme-color" content="#193747">
+
+
+<meta name="generator" content="Hydejack v8.4.0" />
+
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="yizhang82's blog" />
+
+
+
+<link rel="alternate" href="http://localhost:4000/dotnet-generics-typeof-t" hreflang="en">
+
+<link rel="shortcut icon" href="/assets/icons/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icons/icon.png">
+
+<link rel="manifest" href="/assets/manifest.json">
+
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+
+  <link rel="dns-prefetch" href="https://www.google-analytics.com">
+
+
+
+<link rel="dns-prefetch" href="/" id="_baseURL">
+<link rel="dns-prefetch" href="/assets/js/hydejack-8.4.0.js" id="_hrefJS">
+<link rel="dns-prefetch" href="/sw.js" id="_hrefSW">
+<link rel="dns-prefetch" href="/assets/bower_components/fontfaceobserver/fontfaceobserver.standalone.js" id="_hrefFFO">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.js" id="_hrefKatexJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.css" id="_hrefKatexCSS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.js" id="_hrefKatexCopyJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.css" id="_hrefKatexCopyCSS">
+<link rel="dns-prefetch" href="/assets/img/swipe.svg" id="_hrefSwipeSVG">
+
+
+
+<link rel="dns-prefetch" href="https://yizhang82.disqus.com" id="_hrefDisqus">
+
+
+<script>!function(e,t){"use strict";function n(e,t,n,r){e.addEventListener?e.addEventListener(t,n,r):e.attachEvent?e.attachEvent("on"+t,n):e["on"+t]=n}e.loadJS=function(e,r){var o=t.createElement("script");o.src=e,r&&n(o,"load",r,{once:!0});var a=t.scripts[0];return a.parentNode.insertBefore(o,a),o},e._loaded=!1,e.loadJSDeferred=function(r,o){function a(){e._loaded=!0,o&&n(d,"load",o,{once:!0});var r=t.scripts[0];r.parentNode.insertBefore(d,r)}var d=t.createElement("script");return d.src=r,e._loaded?a():n(e,"load",a,{once:!0}),d},e.setRel=e.setRelStylesheet=function(e){function n(){this.rel="stylesheet"}var r=t.getElementById(e);r.addEventListener?r.addEventListener("load",n,{once:!0}):r.onload=n}}(window,document);
+!function(a){"use strict";var b=function(b,c,d){function e(a){return h.body?a():void setTimeout(function(){e(a)})}function f(){i.addEventListener&&i.removeEventListener("load",f),i.media=d||"all"}var g,h=a.document,i=h.createElement("link");if(c)g=c;else{var j=(h.body||h.getElementsByTagName("head")[0]).childNodes;g=j[j.length-1]}var k=h.styleSheets;i.rel="stylesheet",i.href=b,i.media="only x",e(function(){g.parentNode.insertBefore(i,c?g:g.nextSibling)});var l=function(a){for(var b=i.href,c=k.length;c--;)if(k[c].href===b)return a();setTimeout(function(){l(a)})};return i.addEventListener&&i.addEventListener("load",f),i.onloadcssdefined=l,l(f),i};"undefined"!=typeof exports?exports.loadCSS=b:a.loadCSS=b}("undefined"!=typeof global?global:this);
+!function(a){if(a.loadCSS){var b=loadCSS.relpreload={};if(b.support=function(){try{return a.document.createElement("link").relList.supports("preload")}catch(b){return!1}},b.poly=function(){for(var b=a.document.getElementsByTagName("link"),c=0;c<b.length;c++){var d=b[c];"preload"===d.rel&&"style"===d.getAttribute("as")&&(a.loadCSS(d.href,d,d.getAttribute("media")),d.rel=null)}},!b.support()){b.poly();var c=a.setInterval(b.poly,300);a.addEventListener&&a.addEventListener("load",function(){b.poly(),a.clearInterval(c)}),a.attachEvent&&a.attachEvent("onload",function(){a.clearInterval(c)})}}}(this);
+</script>
+
+<script>!function(w, d) {
+    w._noPushState = false;
+    w._noDrawer = false;
+
+    /**/
+    loadJS(d.getElementById('_hrefFFO').href, function() {
+      if ('Promise' in w) Promise.all([
+        new FontFaceObserver('Noto Sans').load(),
+        new FontFaceObserver('Roboto Slab').load(),
+      ]).then(function f() { d.body.classList.add('font-active'); }, function() {});
+    });
+    /**/
+}(window, document);</script>
+
+<!--[if gt IE 8]><!---->
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="/assets/css/hydejack-8.4.0.css">
+  <link rel="stylesheet" href="/assets/icomoon/style.css">
+  
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Slab:700|Noto+Sans:400,400i,700,700i">
+    <noscript>
+      <style>
+        html { font-family: Noto Sans, Helvetica, Arial, sans-serif!important; }
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .heading { font-family: Roboto Slab, Helvetica, Arial, sans-serif!important; }
+      </style>
+    </noscript>
+  
+
+
+  <style id="_pageStyle">
+
+.content a:not(.btn){color:#4fb1ba;border-color:rgba(79,177,186,0.2)}.content a:not(.btn):hover{border-color:#4fb1ba}:focus{outline-color:#4fb1ba !important}.btn-primary{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:focus,.btn-primary.focus,.form-control:focus,.form-control.focus{box-shadow:0 0 0 3px rgba(79,177,186,0.5)}.btn-primary:hover,.btn-primary.hover{color:#fff;background-color:#409ba3;border-color:#409ba3}.btn-primary:disabled,.btn-primary.disabled{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:active,.btn-primary.active{color:#fff;background-color:#409ba3;border-color:#409ba3}::selection{color:#fff;background:#4fb1ba}::-moz-selection{color:#fff;background:#4fb1ba}
+
+</style>
+
+
+<!--<![endif]-->
+
+
+
+
+</head>
+
+<body>
+  <div id="_navbar" class="navbar fixed-top">
+  <div class="content">
+    <div class="nav-btn-bar">
+      <span class="sr-only">Jump to:</span>
+      <a id="_menu" class="nav-btn no-hover fl" href="#_navigation">
+        <span class="sr-only">Navigation</span>
+        <span class="icon-menu"></span>
+      </a>
+    </div>
+  </div>
+</div>
+<hr class="sr-only" hidden />
+
+
+<hy-push-state
+  replace-ids="_main"
+  link-selector="a[href]:not([href*='/assets/']):not(.external):not(.no-push-state)"
+  duration="250"
+  script-selector="script:not([type^='math/tex'])"
+  prefetch
+>
+  
+    <main
+  id="_main"
+  class="content fade-in layout-post"
+  role="main"
+  data-color="#4fb1ba"
+  data-theme-color="#193747"
+  
+    data-image="/assets/img/sidebar-bg.jpg"
+    data-overlay
+  
+  >
+  
+
+
+
+
+<article id="post-dotnet-generics-typeof" class="page post mb6" role="article">
+  <header>
+    <h1 class="post-title">
+      
+        typeof(TSecret) - the secret magic behind .NET generics
+      
+    </h1>
+
+    <p class="post-date heading">
+      
+      <time datetime="2018-04-09T00:00:00-07:00">09 Apr 2018</time>
+      
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+in <span>C#</span> / <span>Clr</span> / <span>Netcore</span> / <span>Typesystem</span> / <span>Generics</span> / <a href="/category/dotnet/" class="flip-title">.NET / .NET Core</a>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+    </p>
+
+    
+    
+
+    
+
+
+
+  
+    <p class="message" >
+      How typeof(T) works in .NET generics
+
+    </p>
+  
+
+
+  </header>
+
+  
+    
+<p>In <a href="http://yizhang82.me/dotnet-generics-sharing">last post</a> we’ve talked about how .NET does code sharing for reference types. This time let’s take a look at how <code class="highlighter-rouge">typeof(T)</code> does its black magic.</p>
+
+<p>In particular, how does the code knows what <code class="highlighter-rouge">typeof(T)</code> is, in the presence of code sharing?</p>
+
+<p>Obviously if there is no code sharing at all, each method instantiation are different and the code would be instantiated with the correct <code class="highlighter-rouge">typeof(T)</code> code where T is a real type, it obviously would “just work”.</p>
+
+<p>Before we dive into the implementation, let’s take a first crack at this problem and see what are the challenges.</p>
+
+<!--more-->
+
+<h2 id="interview-challenge-implement-typeoft-for-clr--net">Interview Challenge: Implement typeof(T) for CLR / .NET</h2>
+
+<p>Let’s consider the following code:</p>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="k">void</span> <span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">T</span> <span class="n">obj</span><span class="p">)</span> <span class="p">{</span> <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span> <span class="p">}</span>
+<span class="p">}</span>
+
+</code></pre></div></div>
+
+<p>One obvious idea is to just get T from the argument:</p>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="k">void</span> <span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">T</span> <span class="n">obj</span><span class="p">)</span> <span class="p">{</span> <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">obj</span><span class="p">.</span><span class="nf">GetType</span><span class="p">());</span> <span class="p">}</span>
+
+</code></pre></div></div>
+
+<p>This appears to work, but if you think about it, it doesn’t always give the right answer. What if obj is a sub-class and T is a base class? In this case we end up printing the derived class, which is incorrect.</p>
+
+<p>And T doesn’t always show up in the arguments as well:</p>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="k">void</span> <span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span> <span class="p">{</span> <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Let’s take a look at another case:</p>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Foo</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span>
+<span class="p">{</span>
+    <span class="k">void</span> <span class="nf">Func</span><span class="p">()</span> <span class="p">{</span> <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This time, there is no argument that helps us. But we do have this pointer - which is <code class="highlighter-rouge">Foo&lt;T&gt;</code>:</p>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Foo</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span>
+<span class="p">{</span>
+    <span class="k">void</span> <span class="nf">Func</span><span class="p">()</span> <span class="p">{</span> <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nf">GetType</span><span class="p">().</span><span class="nf">GetGenericArguments</span><span class="p">()[</span><span class="m">0</span><span class="p">];</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>This actually works rather well. But what if this is a static method which doesn’t have this?</p>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">Foo</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span>
+<span class="p">{</span>
+    <span class="k">static</span> <span class="k">void</span> <span class="nf">Func</span><span class="p">()</span> <span class="p">{</span> <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>So looks like we can’t really always rely on the argument/this pointer inside the function to figure out the T type (except for instance methods on generic types where we can use <code class="highlighter-rouge">this</code> pointer). And given that the method is generated in a “generic” fashion it doesn’t know anything about the T by design.</p>
+
+<p>The underlying problem is that there isn’t enough contextual information to infer the T.</p>
+
+<p>To make it work, you need to think like a runtime/compiler dev - if there isn’t enough information in the method itself, change the caller to pass it in!</p>
+
+<p>Just imagine the compiler (JIT, C++ compiler in .NET native, etc) could work with the runtime to figure out these are special methods that needs “assistance”, and needs to change the call site (fancy term for where the call happens in the caller code) to insert a magic parameter that carries additional information about the type arguments. .NET runtime / compiler often employs tricks like this - it is known as “secret argument”. One another example is that .NET interop IL stub also use secret argument to support sharing interop “stubs” across P/invoke &amp; COM interop methods that has compatible method signatures.</p>
+
+<h2 id="under-the-hood">Under the hood</h2>
+
+<p>Internally, .NET runtime supports 3 kinds of generic lookup for <code class="highlighter-rouge">typeof(T)</code> case:</p>
+
+<ol>
+  <li>
+    <p>Look up generic argument from <code class="highlighter-rouge">this</code> pointer</p>
+  </li>
+  <li>
+    <p>Look up generic argument from secret <code class="highlighter-rouge">InstantiatedMethodDesc</code> parameter that describes a method</p>
+  </li>
+  <li>
+    <p>Look up generic argument from secret <code class="highlighter-rouge">MethodTable</code> parameter that describes a type</p>
+  </li>
+</ol>
+
+<blockquote>
+  <p>In .NET, a <a href="https://github.com/dotnet/coreclr/blob/master/src/vm/method.hpp">MethodTable</a> describes a type and all its related information. A MethodTable * is equivalent of Type object within the runtime. Similarly, <a href="https://github.com/dotnet/coreclr/blob/master/src/vm/methodtable.h">MethodDesc</a> is the equivalent of MethodInfo in the runtime. Both data structures are generated by CLR type loader at runtime from .NET metadata in <a href="https://github.com/dotnet/coreclr/blob/master/src/vm/methodtablebuilder.cpp">methodtablebuilder.cpp</a>.</p>
+</blockquote>
+
+<p>These are defined in <a href="https://github.com/dotnet/coreclr/blob/master/src/inc/corinfo.h">corinfo.h</a>:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="k">enum</span> <span class="n">CORINFO_RUNTIME_LOOKUP_KIND</span>
+<span class="p">{</span>
+    <span class="n">CORINFO_LOOKUP_THISOBJ</span><span class="p">,</span>
+    <span class="n">CORINFO_LOOKUP_METHODPARAM</span><span class="p">,</span>
+    <span class="n">CORINFO_LOOKUP_CLASSPARAM</span><span class="p">,</span>
+<span class="p">};</span>
+
+</code></pre></div></div>
+
+<p>During compilation, compiler works with runtime to figure out information about the method being called in <code class="highlighter-rouge">CEEInfo::getCallInfo</code>, which calls <code class="highlighter-rouge">CEEInfo::ComputeRuntimeLookupForSharedGenericToken</code> to determine the lookup kind.</p>
+
+<blockquote>
+  <p>.NET gets the layering between runtime and compiler right. <code class="highlighter-rouge">ICorJitInfo</code> is the JIT/EE (= execution engine  = runtime) so that runtime and JIT (or any other compiler) can talk to each other - it is core to how JIT understands the .NET type system and .NET by design can talk to any compiler as long as they properly implement this interface. This is how .NET native / CoreRT is able to swap JIT with a proper C++ backend compiler using <a href="https://github.com/dotnet/corert/blob/master/src/JitInterface/src/CorInfoImpl.cs">its own ICorJitInfo implementation</a>. <a href="https://github.com/dotnet/coreclr/blob/master/src/vm/jitinterface.cpp">CEEInfo</a> is the implementation for JIT.</p>
+</blockquote>
+
+<h2 id="diving-into-the-generated-code---corinfo_lookup_thisobj">Diving into the generated code - CORINFO_LOOKUP_THISOBJ</h2>
+
+<p>Assuming we have the following code:</p>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+    <span class="c1">// Case #1: Generic class, non-generic method</span>
+    <span class="k">class</span> <span class="nc">T1</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span>
+    <span class="p">{</span>
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">Func</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Case #2: Non-generic class, generic method</span>
+    <span class="k">class</span> <span class="nc">T2</span>
+    <span class="p">{</span>
+        <span class="k">public</span> <span class="k">void</span> <span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span>
+        <span class="p">{</span>
+            <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Case #3 : Generic class, static non-generic method</span>
+    <span class="k">class</span> <span class="nc">T3</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span>
+    <span class="p">{</span>
+        <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">Func</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Case #4: Non-generic class, static generic method</span>
+    <span class="k">class</span> <span class="nc">T4</span>
+    <span class="p">{</span>
+        <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span>
+        <span class="p">{</span>
+            <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+</code></pre></div></div>
+
+<p>Let’s take look at case #1 first. As discussed earlier, the type parameter is infered from <code class="highlighter-rouge">this</code> pointer. You can see the following code generated by JIT below for the typeof(T) code, with comments added by me.</p>
+
+<pre><code class="language-asm">
+00007fff`04ff0946 488b4d10        mov     rcx,qword ptr [rbp+10h]           ; this pointer saved in [rbp+10h] earlier
+00007fff`04ff094a 488b09          mov     rcx,qword ptr [rcx]               ; MethodTable *
+00007fff`04ff094d 488b4930        mov     rcx,qword ptr [rcx+30h]           ; m_pPerInstInfo at 0x30 offset
+00007fff`04ff0951 488b09          mov     rcx,qword ptr [rcx]               ; first generic dictionary
+00007fff`04ff0954 488b09          mov     rcx,qword ptr [rcx]               ; first type arg
+00007fff`04ff0957 48894de0        mov     qword ptr [rbp-20h],rcx
+00007fff`04ff095b 8b4de0          mov     ecx,dword ptr [rbp-20h]
+00007fff`04ff095e f7c101000000    test    ecx,1                             ; does it have indirection?
+00007fff`04ff0964 750a            jne     00007fff`04ff0970
+00007fff`04ff0966 488b4de0        mov     rcx,qword ptr [rbp-20h]           ; no indirection required - load T
+00007fff`04ff096a 48894dd8        mov     qword ptr [rbp-28h],rcx
+00007fff`04ff096e eb0f            jmp     00007fff`04ff097f
+00007fff`04ff0970 488b4de0        mov     rcx,qword ptr [rbp-20h]           ; has indirection - go get that
+00007fff`04ff0974 488b89ffffffff  mov     rcx,qword ptr [rcx-1]
+00007fff`04ff097b 48894dd8        mov     qword ptr [rbp-28h],rcx
+00007fff`04ff097f 488b4dd8        mov     rcx,qword ptr [rbp-28h]           ; either way rbp-28h is the MethodTable * we need
+00007fff`04ff0983 e868dfac5f      call    coreclr!JIT_GetRuntimeType (00007fff`64abe8f0)    ; Get Type object
+
+</code></pre>
+
+<p>Before we dive deeper, we need to talk about another concept - generic dictionaries.</p>
+
+<p>You might have realized this in the beginning of this article - if we use <code class="highlighter-rouge">this</code> pointer to get the type argument, we need a way to say “give me the T argument”. The runtime supports this operation using a special data structure called generic dictionary in <code class="highlighter-rouge">MethodTable</code> (see my earlier description for MetohdTable and MethodDesc). It saves each type argument for each generic parameter, and also caches associated instantiations (we won’t talk about it here - otherwise this will get too long). It is in <code class="highlighter-rouge">m_pPerInstInfo</code> field which happens to be at 0x30:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+0:000&gt; dt coreclr!MethodTable
+   =00007fff`64ec6808 s_pMethodDataCache : (null) 
+   =00007fff`64ebe154 s_fUseParentMethodData : Int4B
+   =00007fff`64ebe158 s_fUseMethodDataCache : Int4B
+   +0x000 m_dwFlags        : Uint4B
+   +0x004 m_BaseSize       : Uint4B
+   +0x008 m_wFlags2        : Uint2B
+   +0x00a m_wToken         : Uint2B
+   +0x00c m_wNumVirtuals   : Uint2B
+   +0x00e m_wNumInterfaces : Uint2B
+   +0x010 m_pParentMethodTable : Uint8B
+   +0x018 m_pLoaderModule  : Ptr64 Module
+   +0x020 m_pWriteableData : Ptr64 MethodTableWriteableData
+   +0x028 m_pEEClass       : Ptr64 EEClass
+   +0x028 m_pCanonMT       : Uint8B
+   +0x030 m_pPerInstInfo   : Ptr64 Ptr64 Dictionary
+
+</code></pre></div></div>
+
+<p>The <code class="highlighter-rouge">MethodTable</code> pointer is always at the first pointer field in any object - this is how you can do <code class="highlighter-rouge">object.GetType</code> for any reference type - just get the first pointer field and you got the MethodTable *. You can think of this as .NET / CLR’s equivalent of C++ vtable / RTTI, but with much richer information. Anyway, it is only a few pointers away between the object and the <code class="highlighter-rouge">m_pPerInstInfo</code>:</p>
+
+<pre><code class="language-asm">
+00007fff`04ff0946 488b4d10        mov     rcx,qword ptr [rbp+10h]           ; this pointer
+00007fff`04ff094a 488b09          mov     rcx,qword ptr [rcx]               ; MethodTable *
+00007fff`04ff094d 488b4930        mov     rcx,qword ptr [rcx+30h]           ; m_pPerInstInfo
+
+</code></pre>
+
+<p>Due to inheritance, an object could have more than one generic dictionaries and can refer to base / parent class’s generic dictionary. In this case there is only one. The first element in the dictionary is the first type argument, the 2nd one is the 2nd type argument, etc. In this case we just get the first one. Either way the compiler always knows the index of the type argument from the list of type parameters statically.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+00007fff`04ff0951 488b09          mov     rcx,qword ptr [rcx]               ; first generic dictionary
+00007fff`04ff0954 488b09          mov     rcx,qword ptr [rcx]               ; first type arg
+
+</code></pre></div></div>
+
+<p>After that we need to do a bit of fixup if the pointer is a pointer to the actual type <code class="highlighter-rouge">MethodTable</code>. The lowest bit being 1 indicates that it is an indirection, otherwise it is the real pointer. Either way, the real type arguments ends up being <code class="highlighter-rouge">rcx</code> which we call <code class="highlighter-rouge">coreclr!JIT_GetRuntimeType</code> on, which gives you the type (actually it’s not the type yet in CoreCLR, but that’s out of scope of this article).</p>
+
+<h2 id="diving-into-generated-code---corinfo_lookup_methodparam">Diving into generated code - CORINFO_LOOKUP_METHODPARAM</h2>
+
+<p>This time let’s look at T2 - a generic instance method on a non-generic class.</p>
+
+<p>The call site pass a secret argument as expected:</p>
+
+<pre><code class="language-asm">
+00007fff`04ff050a 48ba8061e904ff7f0000 mov rdx,7FFF04E96180h        ; This is the SECRET ARGUMENT
+00007fff`04ff0514 3909            cmp     dword ptr [rcx],ecx
+00007fff`04ff0516 e8bdfbffff      call    00007fff`04ff00d8
+
+</code></pre>
+
+<p>The secret argument is actually a <code class="highlighter-rouge">InstantiatedMethodDesc</code> which has a <code class="highlighter-rouge">m_pPerInstInfo</code> field at 0x10 pointing to generic dictionary, just like <code class="highlighter-rouge">MethodTable</code>. Since there is no inheritance at method level, there is only one generic dictionary.</p>
+
+<p>I’ve added some comment to the method code. It is very similar and a bit more straight-forward (less indirections).</p>
+
+<pre><code class="language-asm">
+                                                                            ; rdx is saved in [rbp+18h] earlier
+00007fff`04ff2010 488b4d18        mov     rcx,qword ptr [rbp+18h]           ; rdx - SECRET ARGUMENT -&gt; InstantiatedMethodDesc *
+00007fff`04ff2014 488b4910        mov     rcx,qword ptr [rcx+10h]           ; m_pPerInstInfo
+00007fff`04ff2018 488b09          mov     rcx,qword ptr [rcx]               ; first type argument
+00007fff`04ff201b 48894de0        mov     qword ptr [rbp-20h],rcx
+00007fff`04ff201f 8b4de0          mov     ecx,dword ptr [rbp-20h]
+00007fff`04ff2022 f7c101000000    test    ecx,1                             ; indirection check
+00007fff`04ff2028 750a            jne     00007fff`04ff2034
+00007fff`04ff202a 488b4de0        mov     rcx,qword ptr [rbp-20h]
+00007fff`04ff202e 48894dd8        mov     qword ptr [rbp-28h],rcx
+00007fff`04ff2032 eb0f            jmp     00007fff`04ff2043
+00007fff`04ff2034 488b4de0        mov     rcx,qword ptr [rbp-20h]
+00007fff`04ff2038 488b89ffffffff  mov     rcx,qword ptr [rcx-1]
+00007fff`04ff203f 48894dd8        mov     qword ptr [rbp-28h],rcx
+00007fff`04ff2043 488b4dd8        mov     rcx,qword ptr [rbp-28h]           ; either way it's in rbp-28h
+00007fff`04ff2047 e8a4c8ac5f      call    coreclr!JIT_GetRuntimeType (00007fff`64abe8f0)
+
+</code></pre>
+
+<h2 id="diving-into-generated-code---corinfo_lookup_classparam">Diving into generated code - CORINFO_LOOKUP_CLASSPARAM</h2>
+
+<p>In case #3, the type parameter is in the class. So naturally we pass the type / MethodTable * as the secret argument:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>00007fff`04ff051c 48b95863e904ff7f0000 mov rcx,7FFF04E96358h            ; this is the secret argument
+00007fff`04ff0526 e8e5fbffff      call    00007fff`04ff0110
+00007fff`04ff052b 90              nop
+
+</code></pre></div></div>
+
+<p>The secret argument is not surprisingly T3 (edited for clarity):</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+0:000&gt; !dumpmt 7FFF04E96358
+Name:               TypeOfTest.T3[System.String, System.Private.CoreLib]
+
+</code></pre></div></div>
+
+<p>The code looks almost exactly the same as the <code class="highlighter-rouge">this</code> case - except in that case we need to get the <code class="highlighter-rouge">MethodTable</code> from <code class="highlighter-rouge">this</code> instead from secret argument, so it’s a bit more work than here:</p>
+
+<pre><code class="language-asm">
+00007fff`04ff227c 488b4d10        mov     rcx,qword ptr [rbp+10h]       ; SECRET ARGUMENT - the MethodTable
+00007fff`04ff2280 488b4930        mov     rcx,qword ptr [rcx+30h]       ; m_pPerInstInfo at 0x30
+00007fff`04ff2284 488b09          mov     rcx,qword ptr [rcx]           ; first dict
+00007fff`04ff2287 488b09          mov     rcx,qword ptr [rcx]           ; first type argument
+00007fff`04ff228a 48894de0        mov     qword ptr [rbp-20h],rcx
+00007fff`04ff228e 8b4de0          mov     ecx,dword ptr [rbp-20h]
+00007fff`04ff2291 f7c101000000    test    ecx,1
+00007fff`04ff2297 750a            jne     00007fff`04ff22a3
+00007fff`04ff2299 488b4de0        mov     rcx,qword ptr [rbp-20h]
+00007fff`04ff229d 48894dd8        mov     qword ptr [rbp-28h],rcx
+00007fff`04ff22a1 eb0f            jmp     00007fff`04ff22b2
+00007fff`04ff22a3 488b4de0        mov     rcx,qword ptr [rbp-20h]
+00007fff`04ff22a7 488b89ffffffff  mov     rcx,qword ptr [rcx-1]
+00007fff`04ff22ae 48894dd8        mov     qword ptr [rbp-28h],rcx
+00007fff`04ff22b2 488b4dd8        mov     rcx,qword ptr [rbp-28h]
+00007fff`04ff22b6 e835c6ac5f      call    coreclr!JIT_GetRuntimeType (00007fff`64abe8f0)
+
+</code></pre>
+
+<p>We won’t look at case #4 in detail here - it’s not hard to conclude that it is relying on <code class="highlighter-rouge">CORINFO_LOOKUP_METHODPARAM</code>.</p>
+
+<h2 id="conclusion-and-whats-next">Conclusion and what’s next</h2>
+
+<p>We’ve looked at how CLR does its typeof(T) magic through a combination of looking at this pointer and secret arguments. The runtime and compiler are in this together and they collaborate to make scenarios like this work. Like everything in life and in computer science, everything has a trade off. In order to share the code, there are additional cost involves when doing seemingly simple things like typeof(T) - we need to do more work both statically and at runtime (by static I mean compile time - which can be at runtime if we are talking about JIT). In next post we’ll dig a bit deeper into generic dictionaries and other dark secrets with secret argument passing.</p>
+
+<p>Two interesting questions that you can probably think about:</p>
+
+<ul>
+  <li>How do you make this work with secret type arguments and also make it performant?</li>
+</ul>
+
+<div class="language-cs highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">void</span> <span class="nf">Func</span><span class="p">()</span> <span class="p">{</span> <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">List</span><span class="p">&lt;</span><span class="n">IComparable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;&gt;));</span> <span class="p">}</span>
+<span class="p">}</span>
+
+</code></pre></div></div>
+
+<ul>
+  <li>How do you make secret argument work with delegates?</li>
+</ul>
+
+<p>I also plan to write more about CLR internals going forward that I don’t see other folks have written yet. Some topics come to mind:</p>
+
+<ul>
+  <li>
+    <p>How .NET implements marshaling, p/invokes and COM</p>
+  </li>
+  <li>
+    <p>How .NET supports WinRT</p>
+  </li>
+  <li>
+    <p>How default interface method is implemented in runtime (https://github.com/dotnet/coreclr/issues/10504)</p>
+  </li>
+</ul>
+
+  
+</article>
+
+
+<hr class="dingbat related" />
+
+
+
+
+  
+     
+
+
+  <aside class="about related mt4 mb4" role="complementary">
+    
+    
+
+<div class="author mt4">
+  
+
+  
+    
+
+
+  <hy-img
+    
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  
+    
+    root-margin="512px"
+  >
+    <noscript><img data-ignore 
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  /></noscript>
+    <span class="loading" slot="loading" hidden>
+      <span class="icon-cog"></span>
+    </span>
+  </hy-img>
+
+
+  
+
+  
+  
+  <h2  class="page-title hr">
+    About
+  </h2>
+
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+<p>Open <code class="highlighter-rouge">_data/authors.yml</code> to edit this text.</p>
+
+<p><a href="https://github.com/qwtel/hydejack-starter-kit/archive/v8.1.1.zip">Download Free</a>
+– or –
+<a href="https://app.simplegoods.co/i/NATYVLYT">Buy PRO</a></p>
+
+
+
+  <div class="sidebar-social">
+    <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+  </div>
+</div>
+
+  </aside>
+
+
+  
+
+  
+  
+
+  
+    
+
+
+
+
+<aside class="related mb4" role="complementary">
+  <h2 class="hr">Related Posts</h2>
+
+  <ul class="related-posts">
+    
+      
+
+
+<li>
+  <a href="/ref-counted-handle" class="h4 flip-title">
+    <span>Top secret .NET handles - Part 2 - Ref-Counted handles</span>
+  </a>
+  <time class="heading faded fine" datetime="2018-02-12T00:00:00-08:00">12 Feb 2018</time>
+</li>
+
+    
+      
+
+
+<li>
+  <a href="/dependent-handle" class="h4 flip-title">
+    <span>Top secret .NET handles - Part 1 - Dependent handles</span>
+  </a>
+  <time class="heading faded fine" datetime="2018-01-24T00:00:00-08:00">24 Jan 2018</time>
+</li>
+
+    
+      
+
+
+<li>
+  <a href="/dotnet-generics-sharing" class="h4 flip-title">
+    <span>Sharing .NET generic code under the hood</span>
+  </a>
+  <time class="heading faded fine" datetime="2017-03-31T00:00:00-07:00">31 Mar 2017</time>
+</li>
+
+    
+  </ul>
+</aside>
+
+  
+
+
+  
+<aside class="comments related" role="complementary">
+  <h2 class="hr">Comments</h2>
+  
+
+<div id="disqus_thread"></div>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+<script>!function(w, d) {
+  if (d.getElementById("disqus_thread")) {
+    if (w.DISQUS) {
+      w.DISQUS.reset({
+        reload: true,
+        config() {
+          this.page.url = w.location.href;
+          this.page.title = d.title;
+        },
+      });
+    } else {
+      w.disqus_config = function disqusConfig() {
+        this.page.url = w.location.href;
+        this.page.title = d.title;
+      };
+      w.loadJSDeferred(d.getElementById("_hrefDisqus").href + '/embed.js');
+    }
+  }
+}(window, document);</script>
+
+
+</aside>
+
+
+  
+<footer role="contentinfo">
+  <hr/>
+  
+    <p><small class="copyright">© 2017. All rights reserved.
+</small></p>
+  
+  
+  <p><small>Powered by <a class="external" href="https://hydejack.com/">Hydejack</a> v<span id="_version">8.4.0</span></small></p>
+  <hr class="sr-only"/>
+</footer>
+
+
+</main>
+
+    <hy-drawer
+  class=""
+  align="left"
+  threshold="10"
+  touch-events
+  prevent-default
+>
+  <header id="_sidebar" class="sidebar" role="banner">
+    
+    <div class="sidebar-bg sidebar-overlay" style="background-color:#4fb1ba;background-image:url(/assets/img/sidebar-bg.jpg)"></div>
+
+    <div class="sidebar-sticky">
+      <div class="sidebar-about">
+        
+          <a class="no-hover" href="/" tabindex="-1">
+            <img src="/assets/icons/icon.png" class="avatar" alt="yizhang82's blog" data-ignore />
+          </a>
+        
+        <h2 class="h1"><a href="/">yizhang82's blog</a></h2>
+        
+        
+          <p class="">
+            Languages, Runtime, Data structures, Databases, and everything in between
+
+          </p>
+        
+      </div>
+
+      <nav class="sidebar-nav heading" role="navigation">
+        <span class="sr-only">Navigation:</span>
+<ul>
+  
+    
+    
+    
+
+    
+      
+        <li>
+          <a
+            id="_navigation"
+            href="/blog/"
+            class="sidebar-nav-item"
+            
+            >
+            Blog archive
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/dotnet/"
+            class="sidebar-nav-item"
+            
+            >
+            .NET / .NET Core
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/database/"
+            class="sidebar-nav-item"
+            
+            >
+            Database
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/interop/"
+            class="sidebar-nav-item"
+            
+            >
+            Interop
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/about/"
+            class="sidebar-nav-item"
+            
+            >
+            About me
+          </a>
+        </li>
+      
+    
+  
+</ul>
+
+      </nav>
+
+      
+
+      <div class="sidebar-social">
+        <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+      </div>
+    </div>
+  </header>
+</hy-drawer>
+<hr class="sr-only" hidden />
+
+  
+</hy-push-state>
+
+
+  <!--[if !IE]><!---->
+  <script>loadJSDeferred(document.getElementById('_hrefJS').href);</script>
+  
+
+  <!--<![endif]-->
+
+  
+  <script>!function(w, d) {
+    w.ga=w.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+
+    /**/
+      ga('create', 'UA-93224322-1', 'auto');
+    /**/
+
+    var pushStateEl = d.getElementsByTagName('hy-push-state')[0];
+    var timeoutId;
+    pushStateEl.addEventListener('hy-push-state-load', function() {
+      w.clearTimeout(timeoutId);
+      timeoutId = w.setTimeout(function() {
+        ga('set', 'page', w.location.pathname);
+        ga('send', 'pageview');
+      }, 500);
+    });
+
+    d.addEventListener('hy--cookies-ok', function () {
+      w.ga(function(tracker) {
+        w.ga("set", "anonymizeIp", undefined);
+        localStorage && localStorage.setItem("ga--client-id", tracker.get("clientId"));
+      });
+    });
+
+    w.loadJSDeferred('https://www.google-analytics.com/analytics.js');
+  }(window, document);</script>
+
+
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      
+        navigator.serviceWorker.getRegistration()
+          .then(r => r.unregister())
+          .catch(() => {});
+      
+    }
+  </script>
+
+
+
+
+
+
+<h2 class="sr-only" hidden>Templates (for web app):</h2>
+
+<template id="_animation-template" hidden>
+  <div class="animation-main fixed-top">
+    <div class="content">
+      <div class="page"></div>
+    </div>
+  </div>
+</template>
+
+<template id="_loading-template" hidden>
+  <div class="loading nav-btn fr">
+    <span class="sr-only">Loading…</span>
+    <span class="icon-cog"></span>
+  </div>
+</template>
+
+<template id="_error-template" hidden>
+  <div class="page">
+    <h1 class="page-title">Error</h1>
+    
+    
+    <p class="lead">
+      Sorry, an error occurred while loading <a class="this-link" href=""></a>.
+
+    </p>
+  </div>
+</template>
+
+<template id="_back-template" hidden>
+  <a id="_back" class="back nav-btn fl no-hover">
+    <span class="sr-only">Back</span>
+    <span class="icon-arrow-left2"></span>
+  </a>
+</template>
+
+<template id="_permalink-template" hidden>
+  <a href="#" class="permalink">
+    <span class="sr-only">Permalink</span>
+    <span class="icon-link"></span>
+  </a>
+</template>
+
+
+
+
+</body>
+</html>

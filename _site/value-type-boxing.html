@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en"><!--
+ __  __                __                                     __
+/\ \/\ \              /\ \             __                    /\ \
+\ \ \_\ \   __  __    \_\ \      __   /\_\      __       ___ \ \ \/'\
+ \ \  _  \ /\ \/\ \   /'_` \   /'__`\ \/\ \   /'__`\    /'___\\ \ , <
+  \ \ \ \ \\ \ \_\ \ /\ \L\ \ /\  __/  \ \ \ /\ \L\.\_ /\ \__/ \ \ \\`\
+   \ \_\ \_\\/`____ \\ \___,_\\ \____\ _\ \ \\ \__/.\_\\ \____\ \ \_\ \_\
+    \/_/\/_/ `/___/> \\/__,_ / \/____//\ \_\ \\/__/\/_/ \/____/  \/_/\/_/
+                /\___/                \ \____/
+                \/__/                  \/___/
+
+Powered by Hydejack v8.4.0 <https://hydejack.com/>
+-->
+
+
+
+
+
+
+
+
+
+
+
+<head>
+  
+
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+
+
+
+  
+<!-- Begin Jekyll SEO tag v2.3.0 -->
+<title>C# value type boxing under the hood | yizhang82’s blog</title>
+<meta property="og:title" content="C# value type boxing under the hood" />
+<meta name="author" content="Yi Zhang" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Talks about different situation when value type boxing happens and how to avoid it" />
+<meta property="og:description" content="Talks about different situation when value type boxing happens and how to avoid it" />
+<link rel="canonical" href="http://localhost:4000/value-type-boxing" />
+<meta property="og:url" content="http://localhost:4000/value-type-boxing" />
+<meta property="og:site_name" content="yizhang82’s blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2017-03-19T00:00:00-07:00" />
+<script type="application/ld+json">
+{"url":"http://localhost:4000/value-type-boxing","headline":"C# value type boxing under the hood","dateModified":"2017-03-19T00:00:00-07:00","datePublished":"2017-03-19T00:00:00-07:00","sameAs":null,"image":null,"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/value-type-boxing"},"name":null,"author":{"@type":"Person","name":"Yi Zhang"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/icons/icon.png"},"name":"Yi Zhang"},"description":"Talks about different situation when value type boxing happens and how to avoid it","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+  
+
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="yizhang82's blog">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<meta name="application-name" content="yizhang82's blog">
+<meta name="msapplication-config" content="/assets/ieconfig.xml">
+
+
+<meta name="theme-color" content="#193747">
+
+
+<meta name="generator" content="Hydejack v8.4.0" />
+
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="yizhang82's blog" />
+
+
+
+<link rel="alternate" href="http://localhost:4000/value-type-boxing" hreflang="en">
+
+<link rel="shortcut icon" href="/assets/icons/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icons/icon.png">
+
+<link rel="manifest" href="/assets/manifest.json">
+
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+
+  <link rel="dns-prefetch" href="https://www.google-analytics.com">
+
+
+
+<link rel="dns-prefetch" href="/" id="_baseURL">
+<link rel="dns-prefetch" href="/assets/js/hydejack-8.4.0.js" id="_hrefJS">
+<link rel="dns-prefetch" href="/sw.js" id="_hrefSW">
+<link rel="dns-prefetch" href="/assets/bower_components/fontfaceobserver/fontfaceobserver.standalone.js" id="_hrefFFO">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.js" id="_hrefKatexJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.css" id="_hrefKatexCSS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.js" id="_hrefKatexCopyJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.css" id="_hrefKatexCopyCSS">
+<link rel="dns-prefetch" href="/assets/img/swipe.svg" id="_hrefSwipeSVG">
+
+
+
+<link rel="dns-prefetch" href="https://yizhang82.disqus.com" id="_hrefDisqus">
+
+
+<script>!function(e,t){"use strict";function n(e,t,n,r){e.addEventListener?e.addEventListener(t,n,r):e.attachEvent?e.attachEvent("on"+t,n):e["on"+t]=n}e.loadJS=function(e,r){var o=t.createElement("script");o.src=e,r&&n(o,"load",r,{once:!0});var a=t.scripts[0];return a.parentNode.insertBefore(o,a),o},e._loaded=!1,e.loadJSDeferred=function(r,o){function a(){e._loaded=!0,o&&n(d,"load",o,{once:!0});var r=t.scripts[0];r.parentNode.insertBefore(d,r)}var d=t.createElement("script");return d.src=r,e._loaded?a():n(e,"load",a,{once:!0}),d},e.setRel=e.setRelStylesheet=function(e){function n(){this.rel="stylesheet"}var r=t.getElementById(e);r.addEventListener?r.addEventListener("load",n,{once:!0}):r.onload=n}}(window,document);
+!function(a){"use strict";var b=function(b,c,d){function e(a){return h.body?a():void setTimeout(function(){e(a)})}function f(){i.addEventListener&&i.removeEventListener("load",f),i.media=d||"all"}var g,h=a.document,i=h.createElement("link");if(c)g=c;else{var j=(h.body||h.getElementsByTagName("head")[0]).childNodes;g=j[j.length-1]}var k=h.styleSheets;i.rel="stylesheet",i.href=b,i.media="only x",e(function(){g.parentNode.insertBefore(i,c?g:g.nextSibling)});var l=function(a){for(var b=i.href,c=k.length;c--;)if(k[c].href===b)return a();setTimeout(function(){l(a)})};return i.addEventListener&&i.addEventListener("load",f),i.onloadcssdefined=l,l(f),i};"undefined"!=typeof exports?exports.loadCSS=b:a.loadCSS=b}("undefined"!=typeof global?global:this);
+!function(a){if(a.loadCSS){var b=loadCSS.relpreload={};if(b.support=function(){try{return a.document.createElement("link").relList.supports("preload")}catch(b){return!1}},b.poly=function(){for(var b=a.document.getElementsByTagName("link"),c=0;c<b.length;c++){var d=b[c];"preload"===d.rel&&"style"===d.getAttribute("as")&&(a.loadCSS(d.href,d,d.getAttribute("media")),d.rel=null)}},!b.support()){b.poly();var c=a.setInterval(b.poly,300);a.addEventListener&&a.addEventListener("load",function(){b.poly(),a.clearInterval(c)}),a.attachEvent&&a.attachEvent("onload",function(){a.clearInterval(c)})}}}(this);
+</script>
+
+<script>!function(w, d) {
+    w._noPushState = false;
+    w._noDrawer = false;
+
+    /**/
+    loadJS(d.getElementById('_hrefFFO').href, function() {
+      if ('Promise' in w) Promise.all([
+        new FontFaceObserver('Noto Sans').load(),
+        new FontFaceObserver('Roboto Slab').load(),
+      ]).then(function f() { d.body.classList.add('font-active'); }, function() {});
+    });
+    /**/
+}(window, document);</script>
+
+<!--[if gt IE 8]><!---->
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="/assets/css/hydejack-8.4.0.css">
+  <link rel="stylesheet" href="/assets/icomoon/style.css">
+  
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Slab:700|Noto+Sans:400,400i,700,700i">
+    <noscript>
+      <style>
+        html { font-family: Noto Sans, Helvetica, Arial, sans-serif!important; }
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .heading { font-family: Roboto Slab, Helvetica, Arial, sans-serif!important; }
+      </style>
+    </noscript>
+  
+
+
+  <style id="_pageStyle">
+
+.content a:not(.btn){color:#4fb1ba;border-color:rgba(79,177,186,0.2)}.content a:not(.btn):hover{border-color:#4fb1ba}:focus{outline-color:#4fb1ba !important}.btn-primary{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:focus,.btn-primary.focus,.form-control:focus,.form-control.focus{box-shadow:0 0 0 3px rgba(79,177,186,0.5)}.btn-primary:hover,.btn-primary.hover{color:#fff;background-color:#409ba3;border-color:#409ba3}.btn-primary:disabled,.btn-primary.disabled{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:active,.btn-primary.active{color:#fff;background-color:#409ba3;border-color:#409ba3}::selection{color:#fff;background:#4fb1ba}::-moz-selection{color:#fff;background:#4fb1ba}
+
+</style>
+
+
+<!--<![endif]-->
+
+
+
+
+</head>
+
+<body>
+  <div id="_navbar" class="navbar fixed-top">
+  <div class="content">
+    <div class="nav-btn-bar">
+      <span class="sr-only">Jump to:</span>
+      <a id="_menu" class="nav-btn no-hover fl" href="#_navigation">
+        <span class="sr-only">Navigation</span>
+        <span class="icon-menu"></span>
+      </a>
+    </div>
+  </div>
+</div>
+<hr class="sr-only" hidden />
+
+
+<hy-push-state
+  replace-ids="_main"
+  link-selector="a[href]:not([href*='/assets/']):not(.external):not(.no-push-state)"
+  duration="250"
+  script-selector="script:not([type^='math/tex'])"
+  prefetch
+>
+  
+    <main
+  id="_main"
+  class="content fade-in layout-post"
+  role="main"
+  data-color="#4fb1ba"
+  data-theme-color="#193747"
+  
+    data-image="/assets/img/sidebar-bg.jpg"
+    data-overlay
+  
+  >
+  
+
+
+
+
+<article id="post-value-type-boxing" class="page post mb6" role="article">
+  <header>
+    <h1 class="post-title">
+      
+        C# value type boxing under the hood
+      
+    </h1>
+
+    <p class="post-date heading">
+      
+      <time datetime="2017-03-19T00:00:00-07:00">19 Mar 2017</time>
+      
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+in <span>C#</span> / <span>Boxing</span> / <span>Typesystem</span> / <a href="/category/dotnet/" class="flip-title">.NET / .NET Core</a>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+    </p>
+
+    
+    
+
+    
+
+
+
+  
+    <p class="message" >
+      Talks about different situation when value type boxing happens and how to avoid it
+
+    </p>
+  
+
+
+  </header>
+
+  
+    <p>I recently had some really interesting discussion with a .NET typesystem expert in the team, and during the conversation he had pointed out an interesting aspect of .NET value type boxing when using constraints. Intrigued by that discussion, I decided to take a further look.</p>
+
+<h2 id="the-basics">The basics</h2>
+
+<p>Before we dig into the details, let’s review some basics and see how boxing can come into play when calling value type methods.</p>
+
+<p>Suppose we have the following code:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">interface</span> <span class="nc">IAdd</span>
+<span class="p">{</span>
+    <span class="k">void</span> <span class="nf">Add</span><span class="p">(</span><span class="kt">int</span> <span class="n">val</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="nc">Foo</span> <span class="p">:</span> <span class="n">IAdd</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="kt">int</span> <span class="k">value</span><span class="p">;</span>
+
+    <span class="k">void</span> <span class="n">IAdd</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="kt">int</span> <span class="n">val</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">value</span> <span class="p">+=</span> <span class="n">val</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">void</span> <span class="nf">AddValue</span><span class="p">(</span><span class="kt">int</span> <span class="n">val</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">value</span> <span class="p">+=</span> <span class="n">val</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">void</span> <span class="nf">Print</span><span class="p">(</span><span class="kt">string</span> <span class="n">msg</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">msg</span> <span class="p">+</span> <span class="s">":"</span> <span class="p">+</span> <span class="k">value</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Nothing fancy here. Foo is a struct that has a <code class="highlighter-rouge">value</code> integer field. It privately implements an interface method that attempts to mutates it’s value, as well as a regular method that does the same thing.</p>
+
+<p>Now if we have the following code:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        <span class="n">Foo</span> <span class="n">f</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">Foo</span><span class="p">();</span>
+        <span class="n">f</span><span class="p">.</span><span class="k">value</span> <span class="p">=</span> <span class="m">10</span><span class="p">;</span>
+        
+        <span class="n">f</span><span class="p">.</span><span class="nf">AddValue</span><span class="p">(</span><span class="m">10</span><span class="p">);</span>
+        <span class="n">f</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="s">"After calling AddValue"</span><span class="p">);</span>
+
+        <span class="p">((</span><span class="n">IAdd</span><span class="p">)</span> <span class="n">f</span><span class="p">).</span><span class="nf">Add</span><span class="p">(</span><span class="m">10</span><span class="p">);</span>
+        <span class="n">f</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="s">"After calling IAdd.Add"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>What is the correct value after AddValue call and the Add call?</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Initial Value:10
+After calling AddValue:20
+After calling IAdd.Add:20
+</code></pre></div></div>
+
+<p>If you are familiar with the language, this is perhaps not surprising to you at all.</p>
+
+<p>But let’s dig a bit deeper and see how JIT does it:</p>
+
+<p>Let’s take a look at the AddValue call first.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lea     rcx,[rbp-18h]
+mov     edx,0Ah
+call    00007ff8`cfa700e0
+</code></pre></div></div>
+
+<p>Note that I’m showing x64 assembly code, which is much easier to understand. The first 4 arguments are always passed in register <code class="highlighter-rouge">rcx</code>, <code class="highlighter-rouge">edx</code>, <code class="highlighter-rouge">r8</code>, <code class="highlighter-rouge">r9</code> (rest is passed through stack), and return value is returned in <code class="highlighter-rouge">rax</code>. All these are 64-bit wide registers. In the code above, JIT is passing the ‘this’ pointer in rcx (pointing to portion of the stack starting at <code class="highlighter-rouge">rbp-18h</code>, and the integer 10 (0x0a) in <code class="highlighter-rouge">rdx/edx</code> (<code class="highlighter-rouge">edx</code> is simply the lower 32-bit portion of <code class="highlighter-rouge">rdx</code>).</p>
+
+<p>Now if you look at the actual code Foo.AddValue:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>00:000&gt; !u 00007ff8`cfa70670
+Normal JIT generated code
+Foo.AddValue(Int32)
+Begin 00007ff8cfa70670, size 36
+&gt;&gt;&gt; 00007ff8`cfa70670 55              push    rbp
+sub     rsp,20h
+lea     rbp,[rsp+20h]
+mov     qword ptr [rbp+10h],rcx        ; this pointer getting saved
+mov     dword ptr [rbp+18h],edx        ; this is integer 10
+mov rax,7FF8CF964560h
+cmp     dword ptr [rax],0
+je      00007ff8`cfa70695
+call    clr!JIT_DbgIsJustMyCode (00007ff9`2f534eb0)
+nop
+mov     eax,dword ptr [rbp+18h]        ; integer 10
+mov     rdx,qword ptr [rbp+10h]        ; this pointer getting restored
+add     dword ptr [rdx],eax            ; assigning first 4-byte at 'this' with 10
+nop
+lea     rsp,[rbp]
+pop     rbp
+ret
+</code></pre></div></div>
+
+<p>Feel free to ignore some of the debugging gibberish (<code class="highlighter-rouge">clr!JIT_DbgIsJustMyCode</code>). If you follow my comments in the assembly (starting with <code class="highlighter-rouge">;</code>), you can see <code class="highlighter-rouge">10</code> is being added to the first 4-byte memory location at ‘this’, which is exactly what <code class="highlighter-rouge">value += val</code> is supposed to do.</p>
+
+<p>And you get the following:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Initial Value:10
+After calling AddValue:20
+</code></pre></div></div>
+
+<h2 id="interface-call-into-the-value-type-instance-method">Interface call into the value type instance method</h2>
+
+<p>Now, let’s take a look at the interface call - the interface call gets a bit more complicated:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mov rcx,7FF8CF965BB0h                        ; first arg to allocation routine - the Foo struct type
+call    clr!JIT_TrialAllocSFastMP_InlineGetThread ; this is the allocation
+mov     qword ptr [rbp-20h],rax                   ; rax is the created boxed 'Foo' struct
+mov     ecx,dword ptr [rbp-18h]                   ; foo.value
+mov     rdx,qword ptr [rbp-20h]                   ; boxed foo
+mov     dword ptr [rdx+8],ecx                     ; copy foo to boxed foo
+mov     rcx,qword ptr [rbp-20h]
+mov     qword ptr [rbp-28h],rcx
+mov     rcx,qword ptr [rbp-28h]                   ; rcx points to the new boxed 'Foo' struct on the heap
+mov     edx,0Ah                                   ; = 10
+mov r11,7FF8CF970020h                        ; r11 is the target 
+cmp     dword ptr [rcx],ecx                       ; this does the 'null' check and triggers a NullRefernceException if needed
+call    qword ptr [r11]                           ; interface dispatch code
+</code></pre></div></div>
+
+<p>Again, I’ve put comments on the right side of the assembly code. It basically creates a boxed Foo, copy the value to the newly created boxed Foo, . Note the <code class="highlighter-rouge">8</code> offset is for the <code class="highlighter-rouge">MethodTable</code> pointer in the beginning of the object - only objects and boxed value type (which is an object, naturally) has those. A regular value type doesn’t.</p>
+
+<p>Ignor all the interface dispatch code for now (it’s not relevant to our discussion), eventually you’ll arrive at some interesting instructions below:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>add     rcx,8                          ; skip the MethodTable pointer and to the first field
+mov rax,7FF8CF965B78h             
+mov     rax,qword ptr [rax]            ; retrieve Foo.Add method
+jmp     rax
+</code></pre></div></div>
+
+<p>This code doesn’t really do much. But actually gives us a lot of insight on how the system works together. Looking back at the old code we’ve shown earlier for <code class="highlighter-rouge">AddValue</code> method, it basically expects this pointer to point to the first field. However, all objects, in order to support type operations (such as reflection, casting, etc) has their first pointer-size field as the type pointer, which is called MethodTable in CLR jargon. Therefore, CLR needs to generate <em>unboxing stub</em> that unbox the boxed value and calls the underlying JITted method that expects to work with an unboxed <code class="highlighter-rouge">this</code> pointer. Note that the unboxing doesn’t involve a copy, it simply adds an offset to it. This effectively means that the += operation would take effect on the boxed copy. However, since the boxed Foo is only known to the compiler, the newly updated value is forever lost. And that’s why you would see:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>After calling IAdd.Add:20
+</code></pre></div></div>
+
+<h2 id="a-case-with-generics">A case with generics</h2>
+
+<p>Now let’s add some generics in the mix:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">static</span> <span class="k">void</span> <span class="n">Add_WithoutConstraints</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="k">ref</span> <span class="n">T</span> <span class="n">foo</span><span class="p">,</span> <span class="kt">int</span> <span class="n">val</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="p">((</span><span class="n">IAdd</span><span class="p">)</span><span class="n">foo</span><span class="p">).</span><span class="nf">Add</span><span class="p">(</span><span class="n">val</span><span class="p">);</span>
+    <span class="p">}</span>
+    
+    <span class="n">Add_WithoutConstraints</span><span class="p">&lt;</span><span class="n">Foo</span><span class="p">&gt;(</span><span class="k">ref</span> <span class="n">f</span><span class="p">,</span> <span class="m">10</span><span class="p">);</span>
+    <span class="n">f</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="s">"After Add_WithoutConstrats"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Even though it is a fancy generic method, the call itself and the underlying code is nothing surprising. As you might already expect, even though the caller passes Foo by reference, <code class="highlighter-rouge">Add_WithoutConstraint</code> makes a copy of it before it calls into IAdd, and the modification is again, forever lost.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>After Add_WithoutConstrats:20
+</code></pre></div></div>
+
+<h2 id="adding-constraints">Adding constraints</h2>
+
+<p>Now the interesting case that I’d like to talk about earlier in the article (thanks for staying with me so far!). Let’s create a generic method with a generic constraint where the T is an IAdd interface:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">static</span> <span class="k">void</span> <span class="n">Add_WithConstraints</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="k">ref</span> <span class="n">T</span> <span class="n">foo</span><span class="p">,</span> <span class="kt">int</span> <span class="n">val</span><span class="p">)</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="n">IAdd</span>
+    <span class="p">{</span>
+        <span class="n">foo</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">val</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">Add_WithConstraints</span><span class="p">&lt;</span><span class="n">Foo</span><span class="p">&gt;(</span><span class="k">ref</span> <span class="n">f</span><span class="p">,</span> <span class="m">10</span><span class="p">);</span>
+    <span class="n">f</span><span class="p">.</span><span class="nf">Print</span><span class="p">(</span><span class="s">"After Add_WithConstraints"</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Perhaps it isn’t entirely obvious to everyone - foo.Add(val) is an interface call using callvirt instruction: <code class="highlighter-rouge">callvirt   instance void IAdd::Add(int32)</code>, because that’s the only way compiler knows how to make the call.</p>
+
+<p>The interesting part is, when we call Add_WithConstraints, the call happens exactly in the same manner, except the code we are calling into looks drastically different:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0:000&gt; !u 00007ff8`cfa707d0
+Normal JIT generated code
+Program.Add_WithConstraints[[Foo, value]](Foo ByRef, Int32)
+Begin 00007ff8cfa707d0, size 3a
+&gt;&gt;&gt; push    rbp
+sub     rsp,20h
+lea     rbp,[rsp+20h]
+mov     qword ptr [rbp+10h],rcx           ; this pointer
+mov     dword ptr [rbp+18h],edx           ; val
+mov rax,7FF8CF964560h                     ; debugger gibberish 
+                                          ; but you probably guessed it's for Just My Code
+cmp     dword ptr [rax],0
+je      00007ff8`cfa707f5
+call    clr!JIT_DbgIsJustMyCode (00007ff9`2f534eb0)
+nop
+mov     rcx,qword ptr [rbp+10h]                  ; this pointer
+mov     edx,dword ptr [rbp+18h]                  ; val
+call    00007ff8`cfa706c0 (Foo.IAdd.Add(Int32)   ; calls the method without boxing!
+nop
+nop
+lea     rsp,[rbp]
+pop     rbp
+ret
+</code></pre></div></div>
+
+<p>As you can see, the code is surprisingly simple. No boxing, no interface cast, and a direct call to <code class="highlighter-rouge">Foo.IAdd.Add</code> method. No value is lost. And you can observe the side effect:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>After Add_WithConstraints:30
+</code></pre></div></div>
+
+<p>The reason is compiler now has enough information to figure out the code is for Foo and the interface call will land exactly on <code class="highlighter-rouge">Foo.IAdd.Add</code>, so it skips the formality and calls the function directly. This is both a performance optimization but also comes with observable side-effect.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>When you are working with interface on value types, be aware of the potential performance cost of boxing and correctness problem of not observing changes in the callee. If you’d like to avoid that, you can use generic constraints to constraint the interface call so that compiler can optimize out the boxing and interface call altogether and go straight to the right function.</p>
+
+<p>You can find the full code in this <a href="https://gist.github.com/yizhang82/f449cfef5cc92ed089bd759cfd2debcd">gist</a>.</p>
+
+  
+</article>
+
+
+<hr class="dingbat related" />
+
+
+
+
+  
+     
+
+
+  <aside class="about related mt4 mb4" role="complementary">
+    
+    
+
+<div class="author mt4">
+  
+
+  
+    
+
+
+  <hy-img
+    
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  
+    
+    root-margin="512px"
+  >
+    <noscript><img data-ignore 
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  /></noscript>
+    <span class="loading" slot="loading" hidden>
+      <span class="icon-cog"></span>
+    </span>
+  </hy-img>
+
+
+  
+
+  
+  
+  <h2  class="page-title hr">
+    About
+  </h2>
+
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+<p>Open <code class="highlighter-rouge">_data/authors.yml</code> to edit this text.</p>
+
+<p><a href="https://github.com/qwtel/hydejack-starter-kit/archive/v8.1.1.zip">Download Free</a>
+– or –
+<a href="https://app.simplegoods.co/i/NATYVLYT">Buy PRO</a></p>
+
+
+
+  <div class="sidebar-social">
+    <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+  </div>
+</div>
+
+  </aside>
+
+
+  
+
+  
+  
+
+  
+    
+
+
+
+
+<aside class="related mb4" role="complementary">
+  <h2 class="hr">Related Posts</h2>
+
+  <ul class="related-posts">
+    
+      
+
+
+<li>
+  <a href="/dotnet-generics-typeof-t" class="h4 flip-title">
+    <span>typeof(TSecret) - the secret magic behind .NET generics</span>
+  </a>
+  <time class="heading faded fine" datetime="2018-04-09T00:00:00-07:00">09 Apr 2018</time>
+</li>
+
+    
+      
+
+
+<li>
+  <a href="/ref-counted-handle" class="h4 flip-title">
+    <span>Top secret .NET handles - Part 2 - Ref-Counted handles</span>
+  </a>
+  <time class="heading faded fine" datetime="2018-02-12T00:00:00-08:00">12 Feb 2018</time>
+</li>
+
+    
+      
+
+
+<li>
+  <a href="/dependent-handle" class="h4 flip-title">
+    <span>Top secret .NET handles - Part 1 - Dependent handles</span>
+  </a>
+  <time class="heading faded fine" datetime="2018-01-24T00:00:00-08:00">24 Jan 2018</time>
+</li>
+
+    
+  </ul>
+</aside>
+
+  
+
+
+  
+<aside class="comments related" role="complementary">
+  <h2 class="hr">Comments</h2>
+  
+
+<div id="disqus_thread"></div>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+<script>!function(w, d) {
+  if (d.getElementById("disqus_thread")) {
+    if (w.DISQUS) {
+      w.DISQUS.reset({
+        reload: true,
+        config() {
+          this.page.url = w.location.href;
+          this.page.title = d.title;
+        },
+      });
+    } else {
+      w.disqus_config = function disqusConfig() {
+        this.page.url = w.location.href;
+        this.page.title = d.title;
+      };
+      w.loadJSDeferred(d.getElementById("_hrefDisqus").href + '/embed.js');
+    }
+  }
+}(window, document);</script>
+
+
+</aside>
+
+
+  
+<footer role="contentinfo">
+  <hr/>
+  
+    <p><small class="copyright">© 2017. All rights reserved.
+</small></p>
+  
+  
+  <p><small>Powered by <a class="external" href="https://hydejack.com/">Hydejack</a> v<span id="_version">8.4.0</span></small></p>
+  <hr class="sr-only"/>
+</footer>
+
+
+</main>
+
+    <hy-drawer
+  class=""
+  align="left"
+  threshold="10"
+  touch-events
+  prevent-default
+>
+  <header id="_sidebar" class="sidebar" role="banner">
+    
+    <div class="sidebar-bg sidebar-overlay" style="background-color:#4fb1ba;background-image:url(/assets/img/sidebar-bg.jpg)"></div>
+
+    <div class="sidebar-sticky">
+      <div class="sidebar-about">
+        
+          <a class="no-hover" href="/" tabindex="-1">
+            <img src="/assets/icons/icon.png" class="avatar" alt="yizhang82's blog" data-ignore />
+          </a>
+        
+        <h2 class="h1"><a href="/">yizhang82's blog</a></h2>
+        
+        
+          <p class="">
+            Languages, Runtime, Data structures, Databases, and everything in between
+
+          </p>
+        
+      </div>
+
+      <nav class="sidebar-nav heading" role="navigation">
+        <span class="sr-only">Navigation:</span>
+<ul>
+  
+    
+    
+    
+
+    
+      
+        <li>
+          <a
+            id="_navigation"
+            href="/blog/"
+            class="sidebar-nav-item"
+            
+            >
+            Blog archive
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/dotnet/"
+            class="sidebar-nav-item"
+            
+            >
+            .NET / .NET Core
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/database/"
+            class="sidebar-nav-item"
+            
+            >
+            Database
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/interop/"
+            class="sidebar-nav-item"
+            
+            >
+            Interop
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/about/"
+            class="sidebar-nav-item"
+            
+            >
+            About me
+          </a>
+        </li>
+      
+    
+  
+</ul>
+
+      </nav>
+
+      
+
+      <div class="sidebar-social">
+        <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+      </div>
+    </div>
+  </header>
+</hy-drawer>
+<hr class="sr-only" hidden />
+
+  
+</hy-push-state>
+
+
+  <!--[if !IE]><!---->
+  <script>loadJSDeferred(document.getElementById('_hrefJS').href);</script>
+  
+
+  <!--<![endif]-->
+
+  
+  <script>!function(w, d) {
+    w.ga=w.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+
+    /**/
+      ga('create', 'UA-93224322-1', 'auto');
+    /**/
+
+    var pushStateEl = d.getElementsByTagName('hy-push-state')[0];
+    var timeoutId;
+    pushStateEl.addEventListener('hy-push-state-load', function() {
+      w.clearTimeout(timeoutId);
+      timeoutId = w.setTimeout(function() {
+        ga('set', 'page', w.location.pathname);
+        ga('send', 'pageview');
+      }, 500);
+    });
+
+    d.addEventListener('hy--cookies-ok', function () {
+      w.ga(function(tracker) {
+        w.ga("set", "anonymizeIp", undefined);
+        localStorage && localStorage.setItem("ga--client-id", tracker.get("clientId"));
+      });
+    });
+
+    w.loadJSDeferred('https://www.google-analytics.com/analytics.js');
+  }(window, document);</script>
+
+
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      
+        navigator.serviceWorker.getRegistration()
+          .then(r => r.unregister())
+          .catch(() => {});
+      
+    }
+  </script>
+
+
+
+
+
+
+<h2 class="sr-only" hidden>Templates (for web app):</h2>
+
+<template id="_animation-template" hidden>
+  <div class="animation-main fixed-top">
+    <div class="content">
+      <div class="page"></div>
+    </div>
+  </div>
+</template>
+
+<template id="_loading-template" hidden>
+  <div class="loading nav-btn fr">
+    <span class="sr-only">Loading…</span>
+    <span class="icon-cog"></span>
+  </div>
+</template>
+
+<template id="_error-template" hidden>
+  <div class="page">
+    <h1 class="page-title">Error</h1>
+    
+    
+    <p class="lead">
+      Sorry, an error occurred while loading <a class="this-link" href=""></a>.
+
+    </p>
+  </div>
+</template>
+
+<template id="_back-template" hidden>
+  <a id="_back" class="back nav-btn fl no-hover">
+    <span class="sr-only">Back</span>
+    <span class="icon-arrow-left2"></span>
+  </a>
+</template>
+
+<template id="_permalink-template" hidden>
+  <a href="#" class="permalink">
+    <span class="sr-only">Permalink</span>
+    <span class="icon-link"></span>
+  </a>
+</template>
+
+
+
+
+</body>
+</html>

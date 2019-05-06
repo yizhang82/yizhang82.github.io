@@ -1,13 +1,8 @@
 ---
 layout: list
-title: .NET
-slug: dotnet 
+title: .NET / .NET Core
+slug: dotnet
 menu: true
-order: 1 
+order: 2
 description: >
-  
-accent_color: '#268bd2'
-accent_image:
-  background: '#202020'
-  overlay:    false
 ---

@@ -94,22 +94,12 @@ defaults:
       path: projects.md
     values:
       menu: true
-      order: 2
-  - scope:
-      path: dotnet.md
-    values:
-      menu: true
-      order: 3
-  - scope:
-      path: todo.md
-    values:
-      menu: true
-      order: 4
+      order: 5
   - scope:
       path: about.md
     values:
       menu: true
-      order: 5 
+      order: 6 
 
 # 3rd Party Integrations
 # ----------------------------------------------------------------------------------------
@@ -209,10 +199,9 @@ include:
 # ========================================================================================
 
 plugins:
-  - jekyll-avatar
   # - jekyll-default-layout
   - jekyll-feed
-  - jekyll-gist
+  #  jekyll-gist
   # - jekyll-optional-front-matter
   - jekyll-paginate
   # - jekyll-readme-index

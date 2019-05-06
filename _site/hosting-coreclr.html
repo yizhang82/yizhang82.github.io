@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en"><!--
+ __  __                __                                     __
+/\ \/\ \              /\ \             __                    /\ \
+\ \ \_\ \   __  __    \_\ \      __   /\_\      __       ___ \ \ \/'\
+ \ \  _  \ /\ \/\ \   /'_` \   /'__`\ \/\ \   /'__`\    /'___\\ \ , <
+  \ \ \ \ \\ \ \_\ \ /\ \L\ \ /\  __/  \ \ \ /\ \L\.\_ /\ \__/ \ \ \\`\
+   \ \_\ \_\\/`____ \\ \___,_\\ \____\ _\ \ \\ \__/.\_\\ \____\ \ \_\ \_\
+    \/_/\/_/ `/___/> \\/__,_ / \/____//\ \_\ \\/__/\/_/ \/____/  \/_/\/_/
+                /\___/                \ \____/
+                \/__/                  \/___/
+
+Powered by Hydejack v8.4.0 <https://hydejack.com/>
+-->
+
+
+
+
+
+
+
+
+
+
+
+<head>
+  
+
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+
+
+
+  
+<!-- Begin Jekyll SEO tag v2.3.0 -->
+<title>Embedding CoreCLR in your C/C++ application | yizhang82’s blog</title>
+<meta property="og:title" content="Embedding CoreCLR in your C/C++ application" />
+<meta name="author" content="Yi Zhang" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Hosting CoreCLR in your C/C++ application" />
+<meta property="og:description" content="Hosting CoreCLR in your C/C++ application" />
+<link rel="canonical" href="http://localhost:4000/hosting-coreclr" />
+<meta property="og:url" content="http://localhost:4000/hosting-coreclr" />
+<meta property="og:site_name" content="yizhang82’s blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2017-01-27T00:00:00-08:00" />
+<script type="application/ld+json">
+{"url":"http://localhost:4000/hosting-coreclr","headline":"Embedding CoreCLR in your C/C++ application","dateModified":"2017-01-27T00:00:00-08:00","datePublished":"2017-01-27T00:00:00-08:00","sameAs":null,"image":null,"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/hosting-coreclr"},"name":null,"author":{"@type":"Person","name":"Yi Zhang"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/icons/icon.png"},"name":"Yi Zhang"},"description":"Hosting CoreCLR in your C/C++ application","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+  
+
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="yizhang82's blog">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<meta name="application-name" content="yizhang82's blog">
+<meta name="msapplication-config" content="/assets/ieconfig.xml">
+
+
+<meta name="theme-color" content="#193747">
+
+
+<meta name="generator" content="Hydejack v8.4.0" />
+
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="yizhang82's blog" />
+
+
+
+<link rel="alternate" href="http://localhost:4000/hosting-coreclr" hreflang="en">
+
+<link rel="shortcut icon" href="/assets/icons/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icons/icon.png">
+
+<link rel="manifest" href="/assets/manifest.json">
+
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+
+  <link rel="dns-prefetch" href="https://www.google-analytics.com">
+
+
+
+<link rel="dns-prefetch" href="/" id="_baseURL">
+<link rel="dns-prefetch" href="/assets/js/hydejack-8.4.0.js" id="_hrefJS">
+<link rel="dns-prefetch" href="/sw.js" id="_hrefSW">
+<link rel="dns-prefetch" href="/assets/bower_components/fontfaceobserver/fontfaceobserver.standalone.js" id="_hrefFFO">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.js" id="_hrefKatexJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.css" id="_hrefKatexCSS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.js" id="_hrefKatexCopyJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.css" id="_hrefKatexCopyCSS">
+<link rel="dns-prefetch" href="/assets/img/swipe.svg" id="_hrefSwipeSVG">
+
+
+
+<link rel="dns-prefetch" href="https://yizhang82.disqus.com" id="_hrefDisqus">
+
+
+<script>!function(e,t){"use strict";function n(e,t,n,r){e.addEventListener?e.addEventListener(t,n,r):e.attachEvent?e.attachEvent("on"+t,n):e["on"+t]=n}e.loadJS=function(e,r){var o=t.createElement("script");o.src=e,r&&n(o,"load",r,{once:!0});var a=t.scripts[0];return a.parentNode.insertBefore(o,a),o},e._loaded=!1,e.loadJSDeferred=function(r,o){function a(){e._loaded=!0,o&&n(d,"load",o,{once:!0});var r=t.scripts[0];r.parentNode.insertBefore(d,r)}var d=t.createElement("script");return d.src=r,e._loaded?a():n(e,"load",a,{once:!0}),d},e.setRel=e.setRelStylesheet=function(e){function n(){this.rel="stylesheet"}var r=t.getElementById(e);r.addEventListener?r.addEventListener("load",n,{once:!0}):r.onload=n}}(window,document);
+!function(a){"use strict";var b=function(b,c,d){function e(a){return h.body?a():void setTimeout(function(){e(a)})}function f(){i.addEventListener&&i.removeEventListener("load",f),i.media=d||"all"}var g,h=a.document,i=h.createElement("link");if(c)g=c;else{var j=(h.body||h.getElementsByTagName("head")[0]).childNodes;g=j[j.length-1]}var k=h.styleSheets;i.rel="stylesheet",i.href=b,i.media="only x",e(function(){g.parentNode.insertBefore(i,c?g:g.nextSibling)});var l=function(a){for(var b=i.href,c=k.length;c--;)if(k[c].href===b)return a();setTimeout(function(){l(a)})};return i.addEventListener&&i.addEventListener("load",f),i.onloadcssdefined=l,l(f),i};"undefined"!=typeof exports?exports.loadCSS=b:a.loadCSS=b}("undefined"!=typeof global?global:this);
+!function(a){if(a.loadCSS){var b=loadCSS.relpreload={};if(b.support=function(){try{return a.document.createElement("link").relList.supports("preload")}catch(b){return!1}},b.poly=function(){for(var b=a.document.getElementsByTagName("link"),c=0;c<b.length;c++){var d=b[c];"preload"===d.rel&&"style"===d.getAttribute("as")&&(a.loadCSS(d.href,d,d.getAttribute("media")),d.rel=null)}},!b.support()){b.poly();var c=a.setInterval(b.poly,300);a.addEventListener&&a.addEventListener("load",function(){b.poly(),a.clearInterval(c)}),a.attachEvent&&a.attachEvent("onload",function(){a.clearInterval(c)})}}}(this);
+</script>
+
+<script>!function(w, d) {
+    w._noPushState = false;
+    w._noDrawer = false;
+
+    /**/
+    loadJS(d.getElementById('_hrefFFO').href, function() {
+      if ('Promise' in w) Promise.all([
+        new FontFaceObserver('Noto Sans').load(),
+        new FontFaceObserver('Roboto Slab').load(),
+      ]).then(function f() { d.body.classList.add('font-active'); }, function() {});
+    });
+    /**/
+}(window, document);</script>
+
+<!--[if gt IE 8]><!---->
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="/assets/css/hydejack-8.4.0.css">
+  <link rel="stylesheet" href="/assets/icomoon/style.css">
+  
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Slab:700|Noto+Sans:400,400i,700,700i">
+    <noscript>
+      <style>
+        html { font-family: Noto Sans, Helvetica, Arial, sans-serif!important; }
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .heading { font-family: Roboto Slab, Helvetica, Arial, sans-serif!important; }
+      </style>
+    </noscript>
+  
+
+
+  <style id="_pageStyle">
+
+.content a:not(.btn){color:#4fb1ba;border-color:rgba(79,177,186,0.2)}.content a:not(.btn):hover{border-color:#4fb1ba}:focus{outline-color:#4fb1ba !important}.btn-primary{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:focus,.btn-primary.focus,.form-control:focus,.form-control.focus{box-shadow:0 0 0 3px rgba(79,177,186,0.5)}.btn-primary:hover,.btn-primary.hover{color:#fff;background-color:#409ba3;border-color:#409ba3}.btn-primary:disabled,.btn-primary.disabled{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:active,.btn-primary.active{color:#fff;background-color:#409ba3;border-color:#409ba3}::selection{color:#fff;background:#4fb1ba}::-moz-selection{color:#fff;background:#4fb1ba}
+
+</style>
+
+
+<!--<![endif]-->
+
+
+
+
+</head>
+
+<body>
+  <div id="_navbar" class="navbar fixed-top">
+  <div class="content">
+    <div class="nav-btn-bar">
+      <span class="sr-only">Jump to:</span>
+      <a id="_menu" class="nav-btn no-hover fl" href="#_navigation">
+        <span class="sr-only">Navigation</span>
+        <span class="icon-menu"></span>
+      </a>
+    </div>
+  </div>
+</div>
+<hr class="sr-only" hidden />
+
+
+<hy-push-state
+  replace-ids="_main"
+  link-selector="a[href]:not([href*='/assets/']):not(.external):not(.no-push-state)"
+  duration="250"
+  script-selector="script:not([type^='math/tex'])"
+  prefetch
+>
+  
+    <main
+  id="_main"
+  class="content fade-in layout-post"
+  role="main"
+  data-color="#4fb1ba"
+  data-theme-color="#193747"
+  
+    data-image="/assets/img/sidebar-bg.jpg"
+    data-overlay
+  
+  >
+  
+
+
+
+
+<article id="post-hosting-coreclr-in-your-application" class="page post mb6" role="article">
+  <header>
+    <h1 class="post-title">
+      
+        Embedding CoreCLR in your C/C++ application
+      
+    </h1>
+
+    <p class="post-date heading">
+      
+      <time datetime="2017-01-27T00:00:00-08:00">27 Jan 2017</time>
+      
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+in <span>Clr</span> / <a href="/category/interop/" class="flip-title">Interop</a> / <span>Hosting</span> / <a href="/category/dotnet/" class="flip-title">.NET / .NET Core</a>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+    </p>
+
+    
+    
+
+    
+
+
+
+  
+    <p class="message" >
+      Hosting CoreCLR in your C/C++ application
+
+    </p>
+  
+
+
+  </header>
+
+  
+    <p>CoreCLR is the runtime that runs your .NET Core application, just like the ‘classic’ .NET in your machine, except it’s much smaller and requires no installation. This makes it ideal for embedding .NET code as part of your application without additional dependency, and you completely are in control of the version of CoreCLR that you are running.</p>
+
+<p>In order to include CoreCLR in your application, you need to “embed” (in CoreCLR terms, this is called hosting) CoreCLR by loading and initializing the runtime instance, and start running code. CoreCLR exposes such functionality through C APIs defined in <a href="https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/inc/coreclrhost.h">coreclrhost.h</a>. This post shows you how to do that.</p>
+
+<p>The discussion below applies to MacOS, but equally applies to Windows/Linux as well.</p>
+
+<h1 id="how-to-initialize-coreclr-and-call-managed-code-from-c">How to initialize CoreCLR and call managed code from C++</h1>
+
+<p>Obviously, you need to actually load the runtime DLL.</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">void</span> <span class="o">*</span><span class="n">coreclr</span> <span class="o">=</span> <span class="n">dlopen</span><span class="p">(</span><span class="s">"libcoreclr.dylib"</span><span class="p">,</span> <span class="n">RTLD_NOW</span> <span class="o">|</span> <span class="n">RTLD_LOCAL</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>Once you have coreclr loaded, you need to initialize coreclr by calling <code class="highlighter-rouge">coreclr_initialize</code> function. First step to that is to retrieve the function pointer:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">coreclr_initialize_ptr</span> <span class="n">coreclr_init</span> <span class="o">=</span> <span class="n">reinterpret_cast</span><span class="o">&lt;</span><span class="n">coreclr_initialize_ptr</span><span class="o">&gt;</span><span class="p">(</span><span class="n">dlsym</span><span class="p">(</span><span class="n">coreclr</span><span class="p">,</span> <span class="s">"coreclr_initialize"</span><span class="p">));</span>
+</code></pre></div></div>
+
+<p>Before calling the function, it is important to set the properties to tell CoreCLR where to find the platform assemblies, and the path to locate app assembly:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>     <span class="n">string</span> <span class="n">tpa_list</span><span class="p">;</span>
+    <span class="n">AddFilesFromDirectoryToTpaList</span><span class="p">(</span><span class="n">exe_path</span><span class="p">,</span> <span class="n">tpa_list</span><span class="p">);</span>
+
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">property_keys</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">"APP_PATHS"</span><span class="p">,</span>
+        <span class="s">"TRUSTED_PLATFORM_ASSEMBLIES"</span>
+    <span class="p">};</span>
+    
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">property_values</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="c1">// APP_PATHS
+</span>        <span class="n">app_path</span><span class="p">,</span>
+        <span class="c1">// TRUSTED_PLATFORM_ASSEMBLIES
+</span>        <span class="n">tpa_list</span><span class="p">.</span><span class="n">c_str</span><span class="p">()</span>
+    <span class="p">};</span>
+</code></pre></div></div>
+
+<p>The AddFilesFromDirectoryToTpaList is directly borrowed from <a href="https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/unixcoreruncommon/coreruncommon.cpp">coreruncommon.cpp</a>. It simply reads the supplied directory for dll/ni.dll using the correct order, and add everything to the list. Having <code class="highlighter-rouge">TRUST_PLATFORM_ASSEMBLIES</code> is needed so that CoreCLR knows where the framework assemblies are. With .NET Core CLI, it is typically located in /usr/local/share/dotnet, but you can have your own copy. One thing to worth out for is that all the path (app_path, tpa_list, etc) here needs to be absolute path - this required for better security. You can easily create absolute path using realpath call.</p>
+
+<p>Once you set the properties, you can now finally initialize coreclr:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">coreclr_init</span><span class="p">(</span>
+        <span class="n">app_path</span><span class="p">,</span>                               <span class="c1">// exePath
+</span>        <span class="s">"host"</span><span class="p">,</span>                                 <span class="c1">// appDomainFriendlyName
+</span>        <span class="k">sizeof</span><span class="p">(</span><span class="n">property_values</span><span class="p">)</span><span class="o">/</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">),</span> <span class="c1">// propertyCount
+</span>        <span class="n">property_keys</span><span class="p">,</span>                          <span class="c1">// propertyKeys
+</span>        <span class="n">property_values</span><span class="p">,</span>                        <span class="c1">// propertyValues
+</span>        <span class="o">&amp;</span><span class="n">coreclr_handle</span><span class="p">,</span>                        <span class="c1">// hostHandle
+</span>        <span class="o">&amp;</span><span class="n">domain_id</span>                              <span class="c1">// domainId
+</span>        <span class="p">);</span>                                       
+</code></pre></div></div>
+
+<p>Many of the parameters are self-explanatory. The API returns a handle (essentially a pointer) to the CoreCLR runtime instance, which you can use to pass to future CoreCLR related calls.</p>
+
+<p>Now that you have the handle, you can now created a delegate from a static method in a managed assembly. Assuming you want to call this function:</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">class</span> <span class="nc">ManLib</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="kt">string</span> <span class="nf">Bootstrap</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s">"Bootstrap!"</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>You need to first define native function pointer type that corresponds to the native equivalent signature of the managed function:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">typedef</span> <span class="kt">char</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">bootstrap_ptr</span><span class="p">)();</span>  
+</code></pre></div></div>
+
+<p>Note that String became char *, according to the default C# marshaling rules. You can also customize the marshaling as needed using [MarshalAsAttribute].</p>
+
+<p>With the function pointer type defined, now you can create the managed delegate and marshal it back to the native function pointer type:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">bootstrap_ptr</span> <span class="n">dele</span><span class="p">;</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">coreclr_create_dele</span><span class="p">(</span>
+        <span class="n">coreclr_handle</span><span class="p">,</span>
+        <span class="n">domain_id</span><span class="p">,</span>
+        <span class="s">"manlib"</span><span class="p">,</span>
+        <span class="s">"ManLib"</span><span class="p">,</span>
+        <span class="s">"Bootstrap"</span><span class="p">,</span>
+        <span class="n">reinterpret_cast</span><span class="o">&lt;</span><span class="kt">void</span> <span class="o">**&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dele</span><span class="p">)</span>
+        <span class="p">);</span>       
+</code></pre></div></div>
+
+<p>The calling part is easy:</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span> <span class="o">=</span> <span class="n">dele</span><span class="p">();</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"ManLib::Bootstrap() returned "</span> <span class="o">&lt;&lt;</span> <span class="n">msg</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>    
+    <span class="n">free</span><span class="p">(</span><span class="n">msg</span><span class="p">);</span>      <span class="c1">// returned string need to be free-ed   
+</span></code></pre></div></div>
+
+<p>The only part worth mention is that C# returned string needs to be freed. This is part of the contract between C# and native code that any memory ownership transfer needs to be freed using free (in Windows, it should be CoTaskMemFree). Otherwise you’ll create a leak.</p>
+
+<h1 id="running-the-code">Running the code</h1>
+
+<p>First, you’ll need to compile the code using g++. You can find the code [here] (https://gist.github.com/yizhang82/1c7c8c9c31a345b1841e64a57856f690). Also, make sure you set include path that has a copy of <a href="https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/inc/coreclrhost.h">coreclrhost.h</a>.</p>
+
+<p>Once you have that, use your .NET Core CLI (dotnet) to create a new .NET core project, change the output to a DLL named manlib.dll, put the C# code shown earlier there, and compile that into manlib.dll. Copy that to the directory where host.cpp is.</p>
+
+<p>Now that you have everything, run the host you compiled earlier, and point it to your dotnet package directory that contains coreclr and all the shared libraries, typically at /usr/local/share/dotnet/shared/Microsoft.NETCore.App/1.0.1, for example:</p>
+
+<p><code class="highlighter-rouge">./host /usr/local/share/dotnet/shared/Microsoft.NETCore.App/1.0.1</code></p>
+
+<p>If everything works as expected, you should see:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pp_path:/Users/yizhang/git/personal/blogs/clr/hosting-coreclr/src
+Loading CoreCLR...
+coreclr_path:/usr/local/share/dotnet/shared/Microsoft.NETCore.App/1.0.1/libcoreclr.dylib
+Initializing CoreCLR...
+Creating delegate...
+Calling ManLib::Bootstrap() through delegate...
+ManLib::Bootstrap() returned Bootstrap!
+</code></pre></div></div>
+
+<p>Imagine that you can build an application having its own copy of coreclr and libraries, and run managed code this way. You can also extend this to be a self-contained COM component as well, if that’s your thing.</p>
+
+<h1 id="more-information">More information</h1>
+
+<p>If you are curious to find out more details, you can take a look at how the test host is implemented in CoreCLR:</p>
+
+<p>https://github.com/dotnet/coreclr/blob/master/src/coreclr/hosts/corerun/corerun.cpp</p>
+
+<p>This is not the host used in .NET Core / CLI, but it provides excellent insight into how one writes a host. The version I presented here is a simplified minimum version.</p>
+
+<p>If you are running into issues with this sample, you might want to check out CoreCLR doc on <a href="https://github.com/dotnet/coreclr/blob/master/Documentation/building/debugging-instructions.md">how to debug</a>.</p>
+
+<p>Good luck!</p>
+
+  
+</article>
+
+
+<hr class="dingbat related" />
+
+
+
+
+  
+     
+
+
+  <aside class="about related mt4 mb4" role="complementary">
+    
+    
+
+<div class="author mt4">
+  
+
+  
+    
+
+
+  <hy-img
+    
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  
+    
+    root-margin="512px"
+  >
+    <noscript><img data-ignore 
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  /></noscript>
+    <span class="loading" slot="loading" hidden>
+      <span class="icon-cog"></span>
+    </span>
+  </hy-img>
+
+
+  
+
+  
+  
+  <h2  class="page-title hr">
+    About
+  </h2>
+
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+<p>Open <code class="highlighter-rouge">_data/authors.yml</code> to edit this text.</p>
+
+<p><a href="https://github.com/qwtel/hydejack-starter-kit/archive/v8.1.1.zip">Download Free</a>
+– or –
+<a href="https://app.simplegoods.co/i/NATYVLYT">Buy PRO</a></p>
+
+
+
+  <div class="sidebar-social">
+    <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+  </div>
+</div>
+
+  </aside>
+
+
+  
+
+  
+  
+
+  
+    
+
+
+
+
+  
+
+
+  
+<aside class="comments related" role="complementary">
+  <h2 class="hr">Comments</h2>
+  
+
+<div id="disqus_thread"></div>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+<script>!function(w, d) {
+  if (d.getElementById("disqus_thread")) {
+    if (w.DISQUS) {
+      w.DISQUS.reset({
+        reload: true,
+        config() {
+          this.page.url = w.location.href;
+          this.page.title = d.title;
+        },
+      });
+    } else {
+      w.disqus_config = function disqusConfig() {
+        this.page.url = w.location.href;
+        this.page.title = d.title;
+      };
+      w.loadJSDeferred(d.getElementById("_hrefDisqus").href + '/embed.js');
+    }
+  }
+}(window, document);</script>
+
+
+</aside>
+
+
+  
+<footer role="contentinfo">
+  <hr/>
+  
+    <p><small class="copyright">© 2017. All rights reserved.
+</small></p>
+  
+  
+  <p><small>Powered by <a class="external" href="https://hydejack.com/">Hydejack</a> v<span id="_version">8.4.0</span></small></p>
+  <hr class="sr-only"/>
+</footer>
+
+
+</main>
+
+    <hy-drawer
+  class=""
+  align="left"
+  threshold="10"
+  touch-events
+  prevent-default
+>
+  <header id="_sidebar" class="sidebar" role="banner">
+    
+    <div class="sidebar-bg sidebar-overlay" style="background-color:#4fb1ba;background-image:url(/assets/img/sidebar-bg.jpg)"></div>
+
+    <div class="sidebar-sticky">
+      <div class="sidebar-about">
+        
+          <a class="no-hover" href="/" tabindex="-1">
+            <img src="/assets/icons/icon.png" class="avatar" alt="yizhang82's blog" data-ignore />
+          </a>
+        
+        <h2 class="h1"><a href="/">yizhang82's blog</a></h2>
+        
+        
+          <p class="">
+            Languages, Runtime, Data structures, Databases, and everything in between
+
+          </p>
+        
+      </div>
+
+      <nav class="sidebar-nav heading" role="navigation">
+        <span class="sr-only">Navigation:</span>
+<ul>
+  
+    
+    
+    
+
+    
+      
+        <li>
+          <a
+            id="_navigation"
+            href="/blog/"
+            class="sidebar-nav-item"
+            
+            >
+            Blog archive
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/dotnet/"
+            class="sidebar-nav-item"
+            
+            >
+            .NET / .NET Core
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/database/"
+            class="sidebar-nav-item"
+            
+            >
+            Database
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/interop/"
+            class="sidebar-nav-item"
+            
+            >
+            Interop
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/about/"
+            class="sidebar-nav-item"
+            
+            >
+            About me
+          </a>
+        </li>
+      
+    
+  
+</ul>
+
+      </nav>
+
+      
+
+      <div class="sidebar-social">
+        <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+      </div>
+    </div>
+  </header>
+</hy-drawer>
+<hr class="sr-only" hidden />
+
+  
+</hy-push-state>
+
+
+  <!--[if !IE]><!---->
+  <script>loadJSDeferred(document.getElementById('_hrefJS').href);</script>
+  
+
+  <!--<![endif]-->
+
+  
+  <script>!function(w, d) {
+    w.ga=w.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+
+    /**/
+      ga('create', 'UA-93224322-1', 'auto');
+    /**/
+
+    var pushStateEl = d.getElementsByTagName('hy-push-state')[0];
+    var timeoutId;
+    pushStateEl.addEventListener('hy-push-state-load', function() {
+      w.clearTimeout(timeoutId);
+      timeoutId = w.setTimeout(function() {
+        ga('set', 'page', w.location.pathname);
+        ga('send', 'pageview');
+      }, 500);
+    });
+
+    d.addEventListener('hy--cookies-ok', function () {
+      w.ga(function(tracker) {
+        w.ga("set", "anonymizeIp", undefined);
+        localStorage && localStorage.setItem("ga--client-id", tracker.get("clientId"));
+      });
+    });
+
+    w.loadJSDeferred('https://www.google-analytics.com/analytics.js');
+  }(window, document);</script>
+
+
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      
+        navigator.serviceWorker.getRegistration()
+          .then(r => r.unregister())
+          .catch(() => {});
+      
+    }
+  </script>
+
+
+
+
+
+
+<h2 class="sr-only" hidden>Templates (for web app):</h2>
+
+<template id="_animation-template" hidden>
+  <div class="animation-main fixed-top">
+    <div class="content">
+      <div class="page"></div>
+    </div>
+  </div>
+</template>
+
+<template id="_loading-template" hidden>
+  <div class="loading nav-btn fr">
+    <span class="sr-only">Loading…</span>
+    <span class="icon-cog"></span>
+  </div>
+</template>
+
+<template id="_error-template" hidden>
+  <div class="page">
+    <h1 class="page-title">Error</h1>
+    
+    
+    <p class="lead">
+      Sorry, an error occurred while loading <a class="this-link" href=""></a>.
+
+    </p>
+  </div>
+</template>
+
+<template id="_back-template" hidden>
+  <a id="_back" class="back nav-btn fl no-hover">
+    <span class="sr-only">Back</span>
+    <span class="icon-arrow-left2"></span>
+  </a>
+</template>
+
+<template id="_permalink-template" hidden>
+  <a href="#" class="permalink">
+    <span class="sr-only">Permalink</span>
+    <span class="icon-link"></span>
+  </a>
+</template>
+
+
+
+
+</body>
+</html>

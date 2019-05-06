@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en"><!--
+ __  __                __                                     __
+/\ \/\ \              /\ \             __                    /\ \
+\ \ \_\ \   __  __    \_\ \      __   /\_\      __       ___ \ \ \/'\
+ \ \  _  \ /\ \/\ \   /'_` \   /'__`\ \/\ \   /'__`\    /'___\\ \ , <
+  \ \ \ \ \\ \ \_\ \ /\ \L\ \ /\  __/  \ \ \ /\ \L\.\_ /\ \__/ \ \ \\`\
+   \ \_\ \_\\/`____ \\ \___,_\\ \____\ _\ \ \\ \__/.\_\\ \____\ \ \_\ \_\
+    \/_/\/_/ `/___/> \\/__,_ / \/____//\ \_\ \\/__/\/_/ \/____/  \/_/\/_/
+                /\___/                \ \____/
+                \/__/                  \/___/
+
+Powered by Hydejack v8.4.0 <https://hydejack.com/>
+-->
+
+
+
+
+
+
+
+
+
+
+
+<head>
+  
+
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+
+
+
+  
+<!-- Begin Jekyll SEO tag v2.3.0 -->
+<title>Top secret .NET handles - Part 2 - Ref-Counted handles | yizhang82’s blog</title>
+<meta property="og:title" content="Top secret .NET handles - Part 2 - Ref-Counted handles" />
+<meta name="author" content="Yi Zhang" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Top secret .NET handles - Part 2 - Ref-Counted handles" />
+<meta property="og:description" content="Top secret .NET handles - Part 2 - Ref-Counted handles" />
+<link rel="canonical" href="http://localhost:4000/ref-counted-handle" />
+<meta property="og:url" content="http://localhost:4000/ref-counted-handle" />
+<meta property="og:site_name" content="yizhang82’s blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-02-12T00:00:00-08:00" />
+<script type="application/ld+json">
+{"url":"http://localhost:4000/ref-counted-handle","headline":"Top secret .NET handles - Part 2 - Ref-Counted handles","dateModified":"2018-02-12T00:00:00-08:00","datePublished":"2018-02-12T00:00:00-08:00","sameAs":null,"image":null,"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/ref-counted-handle"},"name":null,"author":{"@type":"Person","name":"Yi Zhang"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/icons/icon.png"},"name":"Yi Zhang"},"description":"Top secret .NET handles - Part 2 - Ref-Counted handles","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+  
+
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="yizhang82's blog">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<meta name="application-name" content="yizhang82's blog">
+<meta name="msapplication-config" content="/assets/ieconfig.xml">
+
+
+<meta name="theme-color" content="#193747">
+
+
+<meta name="generator" content="Hydejack v8.4.0" />
+
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="yizhang82's blog" />
+
+
+
+<link rel="alternate" href="http://localhost:4000/ref-counted-handle" hreflang="en">
+
+<link rel="shortcut icon" href="/assets/icons/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icons/icon.png">
+
+<link rel="manifest" href="/assets/manifest.json">
+
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+
+  <link rel="dns-prefetch" href="https://www.google-analytics.com">
+
+
+
+<link rel="dns-prefetch" href="/" id="_baseURL">
+<link rel="dns-prefetch" href="/assets/js/hydejack-8.4.0.js" id="_hrefJS">
+<link rel="dns-prefetch" href="/sw.js" id="_hrefSW">
+<link rel="dns-prefetch" href="/assets/bower_components/fontfaceobserver/fontfaceobserver.standalone.js" id="_hrefFFO">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.js" id="_hrefKatexJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.css" id="_hrefKatexCSS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.js" id="_hrefKatexCopyJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.css" id="_hrefKatexCopyCSS">
+<link rel="dns-prefetch" href="/assets/img/swipe.svg" id="_hrefSwipeSVG">
+
+
+
+<link rel="dns-prefetch" href="https://yizhang82.disqus.com" id="_hrefDisqus">
+
+
+<script>!function(e,t){"use strict";function n(e,t,n,r){e.addEventListener?e.addEventListener(t,n,r):e.attachEvent?e.attachEvent("on"+t,n):e["on"+t]=n}e.loadJS=function(e,r){var o=t.createElement("script");o.src=e,r&&n(o,"load",r,{once:!0});var a=t.scripts[0];return a.parentNode.insertBefore(o,a),o},e._loaded=!1,e.loadJSDeferred=function(r,o){function a(){e._loaded=!0,o&&n(d,"load",o,{once:!0});var r=t.scripts[0];r.parentNode.insertBefore(d,r)}var d=t.createElement("script");return d.src=r,e._loaded?a():n(e,"load",a,{once:!0}),d},e.setRel=e.setRelStylesheet=function(e){function n(){this.rel="stylesheet"}var r=t.getElementById(e);r.addEventListener?r.addEventListener("load",n,{once:!0}):r.onload=n}}(window,document);
+!function(a){"use strict";var b=function(b,c,d){function e(a){return h.body?a():void setTimeout(function(){e(a)})}function f(){i.addEventListener&&i.removeEventListener("load",f),i.media=d||"all"}var g,h=a.document,i=h.createElement("link");if(c)g=c;else{var j=(h.body||h.getElementsByTagName("head")[0]).childNodes;g=j[j.length-1]}var k=h.styleSheets;i.rel="stylesheet",i.href=b,i.media="only x",e(function(){g.parentNode.insertBefore(i,c?g:g.nextSibling)});var l=function(a){for(var b=i.href,c=k.length;c--;)if(k[c].href===b)return a();setTimeout(function(){l(a)})};return i.addEventListener&&i.addEventListener("load",f),i.onloadcssdefined=l,l(f),i};"undefined"!=typeof exports?exports.loadCSS=b:a.loadCSS=b}("undefined"!=typeof global?global:this);
+!function(a){if(a.loadCSS){var b=loadCSS.relpreload={};if(b.support=function(){try{return a.document.createElement("link").relList.supports("preload")}catch(b){return!1}},b.poly=function(){for(var b=a.document.getElementsByTagName("link"),c=0;c<b.length;c++){var d=b[c];"preload"===d.rel&&"style"===d.getAttribute("as")&&(a.loadCSS(d.href,d,d.getAttribute("media")),d.rel=null)}},!b.support()){b.poly();var c=a.setInterval(b.poly,300);a.addEventListener&&a.addEventListener("load",function(){b.poly(),a.clearInterval(c)}),a.attachEvent&&a.attachEvent("onload",function(){a.clearInterval(c)})}}}(this);
+</script>
+
+<script>!function(w, d) {
+    w._noPushState = false;
+    w._noDrawer = false;
+
+    /**/
+    loadJS(d.getElementById('_hrefFFO').href, function() {
+      if ('Promise' in w) Promise.all([
+        new FontFaceObserver('Noto Sans').load(),
+        new FontFaceObserver('Roboto Slab').load(),
+      ]).then(function f() { d.body.classList.add('font-active'); }, function() {});
+    });
+    /**/
+}(window, document);</script>
+
+<!--[if gt IE 8]><!---->
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="/assets/css/hydejack-8.4.0.css">
+  <link rel="stylesheet" href="/assets/icomoon/style.css">
+  
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Slab:700|Noto+Sans:400,400i,700,700i">
+    <noscript>
+      <style>
+        html { font-family: Noto Sans, Helvetica, Arial, sans-serif!important; }
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .heading { font-family: Roboto Slab, Helvetica, Arial, sans-serif!important; }
+      </style>
+    </noscript>
+  
+
+
+  <style id="_pageStyle">
+
+.content a:not(.btn){color:#4fb1ba;border-color:rgba(79,177,186,0.2)}.content a:not(.btn):hover{border-color:#4fb1ba}:focus{outline-color:#4fb1ba !important}.btn-primary{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:focus,.btn-primary.focus,.form-control:focus,.form-control.focus{box-shadow:0 0 0 3px rgba(79,177,186,0.5)}.btn-primary:hover,.btn-primary.hover{color:#fff;background-color:#409ba3;border-color:#409ba3}.btn-primary:disabled,.btn-primary.disabled{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:active,.btn-primary.active{color:#fff;background-color:#409ba3;border-color:#409ba3}::selection{color:#fff;background:#4fb1ba}::-moz-selection{color:#fff;background:#4fb1ba}
+
+</style>
+
+
+<!--<![endif]-->
+
+
+
+
+</head>
+
+<body>
+  <div id="_navbar" class="navbar fixed-top">
+  <div class="content">
+    <div class="nav-btn-bar">
+      <span class="sr-only">Jump to:</span>
+      <a id="_menu" class="nav-btn no-hover fl" href="#_navigation">
+        <span class="sr-only">Navigation</span>
+        <span class="icon-menu"></span>
+      </a>
+    </div>
+  </div>
+</div>
+<hr class="sr-only" hidden />
+
+
+<hy-push-state
+  replace-ids="_main"
+  link-selector="a[href]:not([href*='/assets/']):not(.external):not(.no-push-state)"
+  duration="250"
+  script-selector="script:not([type^='math/tex'])"
+  prefetch
+>
+  
+    <main
+  id="_main"
+  class="content fade-in layout-post"
+  role="main"
+  data-color="#4fb1ba"
+  data-theme-color="#193747"
+  
+    data-image="/assets/img/sidebar-bg.jpg"
+    data-overlay
+  
+  >
+  
+
+
+
+
+<article id="post-ref-count-handle" class="page post mb6" role="article">
+  <header>
+    <h1 class="post-title">
+      
+        Top secret .NET handles - Part 2 - Ref-Counted handles
+      
+    </h1>
+
+    <p class="post-date heading">
+      
+      <time datetime="2018-02-12T00:00:00-08:00">12 Feb 2018</time>
+      
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+in <span>Gc</span> / <span>Handle</span> / <a href="/category/dotnet/" class="flip-title">.NET / .NET Core</a> / <span>C#</span> / <a href="/category/interop/" class="flip-title">Interop</a>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+    </p>
+
+    
+    
+
+    
+
+
+
+  
+    <p class="message" >
+      Top secret .NET handles - Part 2 - Ref-Counted handles
+
+    </p>
+  
+
+
+  </header>
+
+  
+    <p><a href="/dependent-handle">Last time</a> we talked about .NET dependent handle. It is a handle that promotes secondary if primary is promoted - as if there is a imaginary reference between them. This time let’s take a look at another secret handle - ref-counted handle. A ref-counted handle is a special handle that will become either strong or weak depending on the ref count. It’s only used in COM interop today internally in the CLR.</p>
+
+<p>You can find its definition in <a href="https://github.com/dotnet/coreclr/blob/dev/release/2.0.0/src/gc/gcinterface.h#L311-L321">gcinterface.h</a></p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="cm">/*
+     * REFCOUNTED HANDLES
+     *
+     * Refcounted handles are handles that behave as strong handles while the
+     * refcount on them is greater than 0 and behave as weak handles otherwise.
+     *
+     * N.B. These are currently NOT general purpose.
+     *      The implementation is tied to COM Interop.
+     *
+     */</span>
+    <span class="n">HNDTYPE_REFCOUNTED</span>   <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+</code></pre></div></div>
+
+<!--more-->
+
+<p>A bit of background before we dive deeper into the details:</p>
+
+<p>COM ref counts is a counter tracking usage counts of each COM object. If it is more than 0, the COM object is alive and can be access. If it ever drops to 0, the COM object deletes itself. Every COM interface has defined AddRef/Release methods to manipulate ref count on the object. If you want to use a COM object, call AddRef to increase its ref count. When you are done, call Release to drop the ref count you “obtained”.</p>
+
+<p>Why COM decides to use ref counts? It’s a straight-forward (if a bit verbose and tedious) protocol to support sharing objects between different components. Explicit free requires knowing exactly when an object is not not being used and that is not possible in a shared environment without special knowledge of the object. You could also build a GC, but it’s challenging to build a GC across multiple languages, and arguably ref-counting is a simple form of GC as well.</p>
+
+<p>In COM interop, CLR needs to expose managed objects as COM objects, and naturally those needs to obey COM lifetime semantics as well, meaning it needs to maintain its own ref count, and be alive if its ref count is more than 0, and allow itself to be collected by GC if ref count drops to 0. Obviously if ref count drops to 0, but there are still other managed objects pointing to this object, it will still be alive.</p>
+
+<p>A ref-counted handle does the following:</p>
+
+<ul>
+  <li>
+    <p>If ref-count is &gt; 0, ref-counted handle becomes a strong handle</p>
+  </li>
+  <li>
+    <p>If ref-count is 0, it becomes a weak handle</p>
+  </li>
+</ul>
+
+<p>(You’ll see later the above is not technically accurate - but this is good enough for now)</p>
+
+<p>Whenever CLR passes a managed object to native as COM object, it’ll create a <a href="https://docs.microsoft.com/en-us/dotnet/framework/interop/com-callable-wrapper">CCW - Com Callable Wrapper</a> which has a ref-counted handle pointing to the underlying managed object. In CLR source code, a CCW is implemented using a link list of ComCallWrapper and SimpleComCallableWrapper.</p>
+
+<p>Let’s take a look at how GC sees the ref-counted handle:</p>
+
+<p><a href="https://github.com/dotnet/coreclr/blob/dev/release/2.0.0/src/gc/objecthandle.cpp#L77-L113">ObjectHandle.cpp</a></p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/*
+ * Scan callback for tracing ref-counted handles.
+ *
+ * This callback is called to trace individual objects referred to by handles
+ * in the refcounted table.
+ */</span>
+<span class="kt">void</span> <span class="n">CALLBACK</span> <span class="nf">PromoteRefCounted</span><span class="p">(</span><span class="n">_UNCHECKED_OBJECTREF</span> <span class="o">*</span><span class="n">pObjRef</span><span class="p">,</span> <span class="kt">uintptr_t</span> <span class="o">*</span><span class="n">pExtraInfo</span><span class="p">,</span> <span class="kt">uintptr_t</span> <span class="n">lp1</span><span class="p">,</span> <span class="kt">uintptr_t</span> <span class="n">lp2</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">WRAPPER_NO_CONTRACT</span><span class="p">;</span>
+    <span class="n">UNREFERENCED_PARAMETER</span><span class="p">(</span><span class="n">pExtraInfo</span><span class="p">);</span>
+
+    <span class="c1">// there are too many races when asychnronously scanning ref-counted handles so we no longer support it
+</span>    <span class="n">_ASSERTE</span><span class="p">(</span><span class="o">!</span><span class="p">((</span><span class="n">ScanContext</span><span class="o">*</span><span class="p">)</span><span class="n">lp1</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">concurrent</span><span class="p">);</span>
+
+    <span class="n">LOG</span><span class="p">((</span><span class="n">LF_GC</span><span class="p">,</span> <span class="n">LL_INFO1000</span><span class="p">,</span> <span class="n">LOG_HANDLE_OBJECT_CLASS</span><span class="p">(</span><span class="s">""</span><span class="p">,</span> <span class="n">pObjRef</span><span class="p">,</span> <span class="s">"causes promotion of "</span><span class="p">,</span> <span class="o">*</span><span class="n">pObjRef</span><span class="p">)));</span>
+
+    <span class="n">Object</span> <span class="o">*</span><span class="n">pObj</span> <span class="o">=</span> <span class="n">VolatileLoad</span><span class="p">((</span><span class="n">PTR_Object</span><span class="o">*</span><span class="p">)</span><span class="n">pObjRef</span><span class="p">);</span>
+
+<span class="cp">#ifdef _DEBUG
+</span>    <span class="n">Object</span> <span class="o">*</span><span class="n">pOldObj</span> <span class="o">=</span> <span class="n">pObj</span><span class="p">;</span>
+<span class="cp">#endif
+</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">HndIsNullOrDestroyedHandle</span><span class="p">(</span><span class="n">pObj</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">g_theGCHeap</span><span class="o">-&gt;</span><span class="n">IsPromoted</span><span class="p">(</span><span class="n">pObj</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">GCToEEInterface</span><span class="o">::</span><span class="n">RefCountedHandleCallbacks</span><span class="p">(</span><span class="n">pObj</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="n">_ASSERTE</span><span class="p">(</span><span class="n">lp2</span><span class="p">);</span>
+            <span class="n">promote_func</span><span class="o">*</span> <span class="n">callback</span> <span class="o">=</span> <span class="p">(</span><span class="n">promote_func</span><span class="o">*</span><span class="p">)</span> <span class="n">lp2</span><span class="p">;</span>
+            <span class="n">callback</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pObj</span><span class="p">,</span> <span class="p">(</span><span class="n">ScanContext</span> <span class="o">*</span><span class="p">)</span><span class="n">lp1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    
+    <span class="c1">// Assert this object wasn't relocated since we are passing a temporary object's address.
+</span>    <span class="n">_ASSERTE</span><span class="p">(</span><span class="n">pOldObj</span> <span class="o">==</span> <span class="n">pObj</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>It simply asks “are you alive” through <code class="highlighter-rouge">RefCountedHandleCallbacks</code>. This function is poorly named in my opinion, for two reasons:</p>
+<ul>
+  <li>It returns a bool and asks the question “are you alive” - so <code class="highlighter-rouge">IsRefCountedObjectAlive</code> is a better name</li>
+  <li>It only calls for one object, so the ‘callbacks’ is a misnomer.</li>
+</ul>
+
+<p>Now you see what I meant earlier. A ref-counted handle really doesn’t track ref counts - it only ask the target object “are you alive”? And the ref count is simply detail being tracked by the object itself, not a property of the ref-counted handle.</p>
+
+<p>Anyway, this function simply calls into internal ComCallWrapper code to retrieve the corresponding ComCallWrapper. 
+I’m not going to cover ComCallWrapper layout in this post - I’ve wrote a chapter about it in <a href="https://github.com/dotnet/coreclr/blob/master/Documentation/botr/README.md">Book of the runtime</a> probably about 10 years ago. Unfortunately it is not open sourced yet - probably because cross-platform applications doesn’t have a signifcant usage for COM interop (but just using very basic COM could become a very viable ABI for writing components - probably deserve another post later). For now, just tink that <code class="highlighter-rouge">GetWrapperForObject</code> go through a magic data structure called <code class="highlighter-rouge">SyncBlock</code> and retrieves the corresponding <code class="highlighter-rouge">ComCallWrapper</code> instance from there - it’s tied to the object. Then it calls <code class="highlighter-rouge">IsWrapperActive</code>:</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">bool</span> <span class="n">GCToEEInterface</span><span class="o">::</span><span class="n">RefCountedHandleCallbacks</span><span class="p">(</span><span class="n">Object</span> <span class="o">*</span> <span class="n">pObject</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">CONTRACTL</span>
+    <span class="p">{</span>
+        <span class="n">NOTHROW</span><span class="p">;</span>
+        <span class="n">GC_NOTRIGGER</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">CONTRACTL_END</span><span class="p">;</span>
+
+<span class="cp">#ifdef FEATURE_COMINTEROP
+</span>    <span class="c1">//&lt;REVISIT_TODO&gt;@todo optimize the access to the ref-count
+</span>    <span class="n">ComCallWrapper</span><span class="o">*</span> <span class="n">pWrap</span> <span class="o">=</span> <span class="n">ComCallWrapper</span><span class="o">::</span><span class="n">GetWrapperForObject</span><span class="p">((</span><span class="n">OBJECTREF</span><span class="p">)</span><span class="n">pObject</span><span class="p">);</span>
+    <span class="n">_ASSERTE</span><span class="p">(</span><span class="n">pWrap</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="o">!!</span><span class="n">pWrap</span><span class="o">-&gt;</span><span class="n">IsWrapperActive</span><span class="p">();</span>
+<span class="cp">#else
+</span>    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+<span class="cp">#endif
+</span><span class="p">}</span>
+</code></pre></div></div>
+
+<p>There are quite a bit of checks going on in <code class="highlighter-rouge">IsWrapperActive</code>. Many of the complications coming from having to support WinRT &amp; XAML and resolving native/managed cycles (which I might cover in a separate post). For the purpose of this post, I’ve simplified it and cut out the unrelated stuff:</p>
+
+<p><a href="https://github.com/dotnet/coreclr/blob/dev/release/2.0.0/src/vm/comcallablewrapper.h#L2645-L2680">ComCallableWrapper.h</a></p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">inline</span> <span class="n">BOOL</span> <span class="n">ComCallWrapper</span><span class="o">::</span><span class="n">IsWrapperActive</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="c1">// Since its called by GCPromote, we assume that this is the start wrapper
+</span>
+    <span class="n">LONGLONG</span> <span class="n">llRefCount</span> <span class="o">=</span> <span class="n">m_pSimpleWrapper</span><span class="o">-&gt;</span><span class="n">GetRealRefCount</span><span class="p">();</span>
+    <span class="n">ULONG</span> <span class="n">cbRef</span> <span class="o">=</span> <span class="n">GET_COM_REF</span><span class="p">(</span><span class="n">llRefCount</span><span class="p">);</span>
+
+    <span class="n">BOOL</span> <span class="n">bHasStrongCOMRefCount</span> <span class="o">=</span> <span class="p">(</span><span class="n">cbRef</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">);</span>
+
+    <span class="n">BOOL</span> <span class="n">bIsWrapperActive</span> <span class="o">=</span> <span class="n">bHasStrongCOMRefCount</span><span class="p">;</span>
+
+    <span class="n">LOG</span><span class="p">((</span><span class="n">LF_INTEROP</span><span class="p">,</span> <span class="n">LL_INFO1000</span><span class="p">,</span> 
+         <span class="s">"CCW 0x%p: cbRef = 0x%x, cbJupiterRef = 0x%x, IsPegged = %d, GlobalPegging = %d, IsHandleWeak = %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> 
+         <span class="k">this</span><span class="p">,</span> 
+         <span class="n">cbRef</span><span class="p">,</span> <span class="n">cbJupiterRef</span><span class="p">,</span> <span class="n">IsPegged</span><span class="p">(),</span> <span class="n">RCWWalker</span><span class="o">::</span><span class="n">IsGlobalPeggingOn</span><span class="p">(),</span> <span class="n">IsHandleWeak</span><span class="p">()));</span>
+    <span class="n">LOG</span><span class="p">((</span><span class="n">LF_INTEROP</span><span class="p">,</span> <span class="n">LL_INFO1000</span><span class="p">,</span> <span class="s">"CCW 0x%p: IsWrapperActive returned %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="k">this</span><span class="p">,</span> <span class="n">bIsWrapperActive</span><span class="p">));</span>
+    
+    <span class="k">return</span> <span class="n">bIsWrapperActive</span><span class="p">;</span>    
+<span class="p">}</span>  
+</code></pre></div></div>
+
+<p>It basically returns true if COM ref &gt; 0, and false otherwise. If you got a CCW in native code, calling <code class="highlighter-rouge">AddRef</code>/<code class="highlighter-rouge">Release</code> will change the ref count.</p>
+
+<p>To summerize, a ref-counted handle is a handle that ask its target object whether it is alive, and changes to strong handle if the answer is yes, and otherwise become a weak handle. The target object is always a object that has an associated CCW, and it knows how to answer that question depending on its internal flags, mostly the ref count.</p>
+
+<h2 id="why-is-this-not-yet-exposed">Why is this not (yet) exposed</h2>
+
+<p>It should be obvious by now that ref-counted handle is hard coded to CCWs - it knows exactly the data structure associated and calls a internal implementation to return whether the handle to the object is strong or weak.</p>
+
+<p>One can imagine this could be exposed as a general mechanism - and GC can ask the handle whether it is alive or weak.</p>
+
+<p>This can be designed in a few different ways:</p>
+
+<ol>
+  <li>
+    <p>The handle maintains a boolean</p>
+  </li>
+  <li>
+    <p>The handle maintain its own ref-count</p>
+  </li>
+  <li>
+    <p>The handle has a callback and GC makes a callback</p>
+  </li>
+</ol>
+
+<p>At a first glance go with #3 seems the most flexible. Unfortunately it has a few problems:</p>
+
+<ul>
+  <li>
+    <p>The callback could take arbitary time and could even deadlock - in this case what you’ll see is that GC taking long time or don’t ever finish. If there are a lot of such objects, the GC team could get a lot of calls from angry customers.</p>
+  </li>
+  <li>
+    <p>Writing the callback is also quite challenging. Imagine if you try to allocate an object in the callback (which is not a outragous idea), and that object triggers a GC, now you’ve got yourself a deadlock because GC is running! You might make the deadlock case a no-op, but that breaks the invariant of GC and presents a much bigger problem.</p>
+  </li>
+</ul>
+
+<p>Go with #1/#2 is probably more reasonable. The handle just needs to maintain a separate ref-count or a boolean, and that gets updated by other code as needed. Unfortunately this can’t be generalized to be used by CCW as it actually needs to run some code. In the code I’ve shown you earlier, it does more than just looking at a ref-count, and it looks at some internal data structure that only updated in GC as well (for resolving native/managed cycles). So this effectively means that the existing ref-count handle can’t be exposed as-is. This is probably why it is not exposed at all - there needs to be people asking for this feature and this needs to be done as a new feature with its own design and scenario.</p>
+
+<h2 id="whats-next">What’s next</h2>
+
+<p>Next time I’ll probably cover AsyncPinned handle. It has special magic powers that can pin objects recursively.</p>
+
+<p>For a complete list of handle types, see</p>
+
+<p><a href="https://github.com/dotnet/coreclr/blob/release/2.0.0/src/gc/gcinterface.h#L241">https://github.com/dotnet/coreclr/blob/release/2.0.0/src/gc/gcinterface.h#L241</a></p>
+
+  
+</article>
+
+
+<hr class="dingbat related" />
+
+
+
+
+  
+     
+
+
+  <aside class="about related mt4 mb4" role="complementary">
+    
+    
+
+<div class="author mt4">
+  
+
+  
+    
+
+
+  <hy-img
+    
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  
+    
+    root-margin="512px"
+  >
+    <noscript><img data-ignore 
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  /></noscript>
+    <span class="loading" slot="loading" hidden>
+      <span class="icon-cog"></span>
+    </span>
+  </hy-img>
+
+
+  
+
+  
+  
+  <h2  class="page-title hr">
+    About
+  </h2>
+
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+<p>Open <code class="highlighter-rouge">_data/authors.yml</code> to edit this text.</p>
+
+<p><a href="https://github.com/qwtel/hydejack-starter-kit/archive/v8.1.1.zip">Download Free</a>
+– or –
+<a href="https://app.simplegoods.co/i/NATYVLYT">Buy PRO</a></p>
+
+
+
+  <div class="sidebar-social">
+    <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+  </div>
+</div>
+
+  </aside>
+
+
+  
+
+  
+  
+
+  
+    
+
+
+
+
+<aside class="related mb4" role="complementary">
+  <h2 class="hr">Related Posts</h2>
+
+  <ul class="related-posts">
+    
+      
+
+
+<li>
+  <a href="/dependent-handle" class="h4 flip-title">
+    <span>Top secret .NET handles - Part 1 - Dependent handles</span>
+  </a>
+  <time class="heading faded fine" datetime="2018-01-24T00:00:00-08:00">24 Jan 2018</time>
+</li>
+
+    
+  </ul>
+</aside>
+
+  
+
+
+  
+<aside class="comments related" role="complementary">
+  <h2 class="hr">Comments</h2>
+  
+
+<div id="disqus_thread"></div>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+<script>!function(w, d) {
+  if (d.getElementById("disqus_thread")) {
+    if (w.DISQUS) {
+      w.DISQUS.reset({
+        reload: true,
+        config() {
+          this.page.url = w.location.href;
+          this.page.title = d.title;
+        },
+      });
+    } else {
+      w.disqus_config = function disqusConfig() {
+        this.page.url = w.location.href;
+        this.page.title = d.title;
+      };
+      w.loadJSDeferred(d.getElementById("_hrefDisqus").href + '/embed.js');
+    }
+  }
+}(window, document);</script>
+
+
+</aside>
+
+
+  
+<footer role="contentinfo">
+  <hr/>
+  
+    <p><small class="copyright">© 2017. All rights reserved.
+</small></p>
+  
+  
+  <p><small>Powered by <a class="external" href="https://hydejack.com/">Hydejack</a> v<span id="_version">8.4.0</span></small></p>
+  <hr class="sr-only"/>
+</footer>
+
+
+</main>
+
+    <hy-drawer
+  class=""
+  align="left"
+  threshold="10"
+  touch-events
+  prevent-default
+>
+  <header id="_sidebar" class="sidebar" role="banner">
+    
+    <div class="sidebar-bg sidebar-overlay" style="background-color:#4fb1ba;background-image:url(/assets/img/sidebar-bg.jpg)"></div>
+
+    <div class="sidebar-sticky">
+      <div class="sidebar-about">
+        
+          <a class="no-hover" href="/" tabindex="-1">
+            <img src="/assets/icons/icon.png" class="avatar" alt="yizhang82's blog" data-ignore />
+          </a>
+        
+        <h2 class="h1"><a href="/">yizhang82's blog</a></h2>
+        
+        
+          <p class="">
+            Languages, Runtime, Data structures, Databases, and everything in between
+
+          </p>
+        
+      </div>
+
+      <nav class="sidebar-nav heading" role="navigation">
+        <span class="sr-only">Navigation:</span>
+<ul>
+  
+    
+    
+    
+
+    
+      
+        <li>
+          <a
+            id="_navigation"
+            href="/blog/"
+            class="sidebar-nav-item"
+            
+            >
+            Blog archive
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/dotnet/"
+            class="sidebar-nav-item"
+            
+            >
+            .NET / .NET Core
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/database/"
+            class="sidebar-nav-item"
+            
+            >
+            Database
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/interop/"
+            class="sidebar-nav-item"
+            
+            >
+            Interop
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/about/"
+            class="sidebar-nav-item"
+            
+            >
+            About me
+          </a>
+        </li>
+      
+    
+  
+</ul>
+
+      </nav>
+
+      
+
+      <div class="sidebar-social">
+        <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+      </div>
+    </div>
+  </header>
+</hy-drawer>
+<hr class="sr-only" hidden />
+
+  
+</hy-push-state>
+
+
+  <!--[if !IE]><!---->
+  <script>loadJSDeferred(document.getElementById('_hrefJS').href);</script>
+  
+
+  <!--<![endif]-->
+
+  
+  <script>!function(w, d) {
+    w.ga=w.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+
+    /**/
+      ga('create', 'UA-93224322-1', 'auto');
+    /**/
+
+    var pushStateEl = d.getElementsByTagName('hy-push-state')[0];
+    var timeoutId;
+    pushStateEl.addEventListener('hy-push-state-load', function() {
+      w.clearTimeout(timeoutId);
+      timeoutId = w.setTimeout(function() {
+        ga('set', 'page', w.location.pathname);
+        ga('send', 'pageview');
+      }, 500);
+    });
+
+    d.addEventListener('hy--cookies-ok', function () {
+      w.ga(function(tracker) {
+        w.ga("set", "anonymizeIp", undefined);
+        localStorage && localStorage.setItem("ga--client-id", tracker.get("clientId"));
+      });
+    });
+
+    w.loadJSDeferred('https://www.google-analytics.com/analytics.js');
+  }(window, document);</script>
+
+
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      
+        navigator.serviceWorker.getRegistration()
+          .then(r => r.unregister())
+          .catch(() => {});
+      
+    }
+  </script>
+
+
+
+
+
+
+<h2 class="sr-only" hidden>Templates (for web app):</h2>
+
+<template id="_animation-template" hidden>
+  <div class="animation-main fixed-top">
+    <div class="content">
+      <div class="page"></div>
+    </div>
+  </div>
+</template>
+
+<template id="_loading-template" hidden>
+  <div class="loading nav-btn fr">
+    <span class="sr-only">Loading…</span>
+    <span class="icon-cog"></span>
+  </div>
+</template>
+
+<template id="_error-template" hidden>
+  <div class="page">
+    <h1 class="page-title">Error</h1>
+    
+    
+    <p class="lead">
+      Sorry, an error occurred while loading <a class="this-link" href=""></a>.
+
+    </p>
+  </div>
+</template>
+
+<template id="_back-template" hidden>
+  <a id="_back" class="back nav-btn fl no-hover">
+    <span class="sr-only">Back</span>
+    <span class="icon-arrow-left2"></span>
+  </a>
+</template>
+
+<template id="_permalink-template" hidden>
+  <a href="#" class="permalink">
+    <span class="sr-only">Permalink</span>
+    <span class="icon-link"></span>
+  </a>
+</template>
+
+
+
+
+</body>
+</html>

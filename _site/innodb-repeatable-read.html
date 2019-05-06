@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en"><!--
+ __  __                __                                     __
+/\ \/\ \              /\ \             __                    /\ \
+\ \ \_\ \   __  __    \_\ \      __   /\_\      __       ___ \ \ \/'\
+ \ \  _  \ /\ \/\ \   /'_` \   /'__`\ \/\ \   /'__`\    /'___\\ \ , <
+  \ \ \ \ \\ \ \_\ \ /\ \L\ \ /\  __/  \ \ \ /\ \L\.\_ /\ \__/ \ \ \\`\
+   \ \_\ \_\\/`____ \\ \___,_\\ \____\ _\ \ \\ \__/.\_\\ \____\ \ \_\ \_\
+    \/_/\/_/ `/___/> \\/__,_ / \/____//\ \_\ \\/__/\/_/ \/____/  \/_/\/_/
+                /\___/                \ \____/
+                \/__/                  \/___/
+
+Powered by Hydejack v8.4.0 <https://hydejack.com/>
+-->
+
+
+
+
+
+
+
+
+
+
+
+<head>
+  
+
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+
+
+
+
+  
+<!-- Begin Jekyll SEO tag v2.3.0 -->
+<title>Repeatable reads in InnoDB comes with a catch | yizhang82’s blog</title>
+<meta property="og:title" content="Repeatable reads in InnoDB comes with a catch" />
+<meta name="author" content="Yi Zhang" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="A few days ago I was looking into a deadlock issue that is caused by a behavioral difference between MySQL storage engine transaction behavior in repeatable reads. This leads me to dig deeper into repeatable read behavior in InnoDB and what I found is quite interesting: The basics Before we dig deeper, let’s revisit some of the basics of database isolation levels. You can refer to my earlier post for a more detailed explanation / comparison. Database isolation level defines the behavior of data read/write operations within transactions, and those can have a signficant impact to protecting the data integrity of your application. Repeatable reads guaratees that you would always observe the same value once you read it, and it would never change unless you’ve made the change yourself, giving you the illusion that it is exclusively owned by you and there is no one else. Of course, this isn’t true in practice as there are pessimistic locking and optimistic locking that defines the behavior when write conflict occurs." />
+<meta property="og:description" content="A few days ago I was looking into a deadlock issue that is caused by a behavioral difference between MySQL storage engine transaction behavior in repeatable reads. This leads me to dig deeper into repeatable read behavior in InnoDB and what I found is quite interesting: The basics Before we dig deeper, let’s revisit some of the basics of database isolation levels. You can refer to my earlier post for a more detailed explanation / comparison. Database isolation level defines the behavior of data read/write operations within transactions, and those can have a signficant impact to protecting the data integrity of your application. Repeatable reads guaratees that you would always observe the same value once you read it, and it would never change unless you’ve made the change yourself, giving you the illusion that it is exclusively owned by you and there is no one else. Of course, this isn’t true in practice as there are pessimistic locking and optimistic locking that defines the behavior when write conflict occurs." />
+<link rel="canonical" href="http://localhost:4000/innodb-repeatable-read" />
+<meta property="og:url" content="http://localhost:4000/innodb-repeatable-read" />
+<meta property="og:site_name" content="yizhang82’s blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-05-05T00:00:00-07:00" />
+<script type="application/ld+json">
+{"url":"http://localhost:4000/innodb-repeatable-read","headline":"Repeatable reads in InnoDB comes with a catch","dateModified":"2019-05-05T00:00:00-07:00","datePublished":"2019-05-05T00:00:00-07:00","sameAs":null,"image":null,"mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/innodb-repeatable-read"},"name":null,"author":{"@type":"Person","name":"Yi Zhang"},"publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"http://localhost:4000/assets/icons/icon.png"},"name":"Yi Zhang"},"description":"A few days ago I was looking into a deadlock issue that is caused by a behavioral difference between MySQL storage engine transaction behavior in repeatable reads. This leads me to dig deeper into repeatable read behavior in InnoDB and what I found is quite interesting: The basics Before we dig deeper, let’s revisit some of the basics of database isolation levels. You can refer to my earlier post for a more detailed explanation / comparison. Database isolation level defines the behavior of data read/write operations within transactions, and those can have a signficant impact to protecting the data integrity of your application. Repeatable reads guaratees that you would always observe the same value once you read it, and it would never change unless you’ve made the change yourself, giving you the illusion that it is exclusively owned by you and there is no one else. Of course, this isn’t true in practice as there are pessimistic locking and optimistic locking that defines the behavior when write conflict occurs.","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+  
+
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="yizhang82's blog">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+<meta name="application-name" content="yizhang82's blog">
+<meta name="msapplication-config" content="/assets/ieconfig.xml">
+
+
+<meta name="theme-color" content="#193747">
+
+
+<meta name="generator" content="Hydejack v8.4.0" />
+
+<link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="yizhang82's blog" />
+
+
+
+<link rel="alternate" href="http://localhost:4000/innodb-repeatable-read" hreflang="en">
+
+<link rel="shortcut icon" href="/assets/icons/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icons/icon.png">
+
+<link rel="manifest" href="/assets/manifest.json">
+
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+
+  <link rel="dns-prefetch" href="https://www.google-analytics.com">
+
+
+
+<link rel="dns-prefetch" href="/" id="_baseURL">
+<link rel="dns-prefetch" href="/assets/js/hydejack-8.4.0.js" id="_hrefJS">
+<link rel="dns-prefetch" href="/sw.js" id="_hrefSW">
+<link rel="dns-prefetch" href="/assets/bower_components/fontfaceobserver/fontfaceobserver.standalone.js" id="_hrefFFO">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.js" id="_hrefKatexJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/katex.min.css" id="_hrefKatexCSS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.js" id="_hrefKatexCopyJS">
+<link rel="dns-prefetch" href="/assets/bower_components/katex/dist/contrib/copy-tex.min.css" id="_hrefKatexCopyCSS">
+<link rel="dns-prefetch" href="/assets/img/swipe.svg" id="_hrefSwipeSVG">
+
+
+
+<link rel="dns-prefetch" href="https://yizhang82.disqus.com" id="_hrefDisqus">
+
+
+<script>!function(e,t){"use strict";function n(e,t,n,r){e.addEventListener?e.addEventListener(t,n,r):e.attachEvent?e.attachEvent("on"+t,n):e["on"+t]=n}e.loadJS=function(e,r){var o=t.createElement("script");o.src=e,r&&n(o,"load",r,{once:!0});var a=t.scripts[0];return a.parentNode.insertBefore(o,a),o},e._loaded=!1,e.loadJSDeferred=function(r,o){function a(){e._loaded=!0,o&&n(d,"load",o,{once:!0});var r=t.scripts[0];r.parentNode.insertBefore(d,r)}var d=t.createElement("script");return d.src=r,e._loaded?a():n(e,"load",a,{once:!0}),d},e.setRel=e.setRelStylesheet=function(e){function n(){this.rel="stylesheet"}var r=t.getElementById(e);r.addEventListener?r.addEventListener("load",n,{once:!0}):r.onload=n}}(window,document);
+!function(a){"use strict";var b=function(b,c,d){function e(a){return h.body?a():void setTimeout(function(){e(a)})}function f(){i.addEventListener&&i.removeEventListener("load",f),i.media=d||"all"}var g,h=a.document,i=h.createElement("link");if(c)g=c;else{var j=(h.body||h.getElementsByTagName("head")[0]).childNodes;g=j[j.length-1]}var k=h.styleSheets;i.rel="stylesheet",i.href=b,i.media="only x",e(function(){g.parentNode.insertBefore(i,c?g:g.nextSibling)});var l=function(a){for(var b=i.href,c=k.length;c--;)if(k[c].href===b)return a();setTimeout(function(){l(a)})};return i.addEventListener&&i.addEventListener("load",f),i.onloadcssdefined=l,l(f),i};"undefined"!=typeof exports?exports.loadCSS=b:a.loadCSS=b}("undefined"!=typeof global?global:this);
+!function(a){if(a.loadCSS){var b=loadCSS.relpreload={};if(b.support=function(){try{return a.document.createElement("link").relList.supports("preload")}catch(b){return!1}},b.poly=function(){for(var b=a.document.getElementsByTagName("link"),c=0;c<b.length;c++){var d=b[c];"preload"===d.rel&&"style"===d.getAttribute("as")&&(a.loadCSS(d.href,d,d.getAttribute("media")),d.rel=null)}},!b.support()){b.poly();var c=a.setInterval(b.poly,300);a.addEventListener&&a.addEventListener("load",function(){b.poly(),a.clearInterval(c)}),a.attachEvent&&a.attachEvent("onload",function(){a.clearInterval(c)})}}}(this);
+</script>
+
+<script>!function(w, d) {
+    w._noPushState = false;
+    w._noDrawer = false;
+
+    /**/
+    loadJS(d.getElementById('_hrefFFO').href, function() {
+      if ('Promise' in w) Promise.all([
+        new FontFaceObserver('Noto Sans').load(),
+        new FontFaceObserver('Roboto Slab').load(),
+      ]).then(function f() { d.body.classList.add('font-active'); }, function() {});
+    });
+    /**/
+}(window, document);</script>
+
+<!--[if gt IE 8]><!---->
+
+
+
+
+
+
+
+
+  <link rel="stylesheet" href="/assets/css/hydejack-8.4.0.css">
+  <link rel="stylesheet" href="/assets/icomoon/style.css">
+  
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Slab:700|Noto+Sans:400,400i,700,700i">
+    <noscript>
+      <style>
+        html { font-family: Noto Sans, Helvetica, Arial, sans-serif!important; }
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .heading { font-family: Roboto Slab, Helvetica, Arial, sans-serif!important; }
+      </style>
+    </noscript>
+  
+
+
+  <style id="_pageStyle">
+
+.content a:not(.btn){color:#4fb1ba;border-color:rgba(79,177,186,0.2)}.content a:not(.btn):hover{border-color:#4fb1ba}:focus{outline-color:#4fb1ba !important}.btn-primary{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:focus,.btn-primary.focus,.form-control:focus,.form-control.focus{box-shadow:0 0 0 3px rgba(79,177,186,0.5)}.btn-primary:hover,.btn-primary.hover{color:#fff;background-color:#409ba3;border-color:#409ba3}.btn-primary:disabled,.btn-primary.disabled{color:#fff;background-color:#4fb1ba;border-color:#4fb1ba}.btn-primary:active,.btn-primary.active{color:#fff;background-color:#409ba3;border-color:#409ba3}::selection{color:#fff;background:#4fb1ba}::-moz-selection{color:#fff;background:#4fb1ba}
+
+</style>
+
+
+<!--<![endif]-->
+
+
+
+
+</head>
+
+<body>
+  <div id="_navbar" class="navbar fixed-top">
+  <div class="content">
+    <div class="nav-btn-bar">
+      <span class="sr-only">Jump to:</span>
+      <a id="_menu" class="nav-btn no-hover fl" href="#_navigation">
+        <span class="sr-only">Navigation</span>
+        <span class="icon-menu"></span>
+      </a>
+    </div>
+  </div>
+</div>
+<hr class="sr-only" hidden />
+
+
+<hy-push-state
+  replace-ids="_main"
+  link-selector="a[href]:not([href*='/assets/']):not(.external):not(.no-push-state)"
+  duration="250"
+  script-selector="script:not([type^='math/tex'])"
+  prefetch
+>
+  
+    <main
+  id="_main"
+  class="content fade-in layout-post"
+  role="main"
+  data-color="#4fb1ba"
+  data-theme-color="#193747"
+  
+    data-image="/assets/img/sidebar-bg.jpg"
+    data-overlay
+  
+  >
+  
+
+
+
+
+<article id="post-innodb-repeatable-reads" class="page post mb6" role="article">
+  <header>
+    <h1 class="post-title">
+      
+        Repeatable reads in InnoDB comes with a catch
+      
+    </h1>
+
+    <p class="post-date heading">
+      
+      <time datetime="2019-05-05T00:00:00-07:00">05 May 2019</time>
+      
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+in <a href="/category/database/" class="flip-title">Database</a> / <span>Innodb</span> / <span>Transaction</span> / <span>Threading</span>
+
+      
+
+
+
+
+
+
+
+
+
+
+
+    </p>
+
+    
+    
+
+    
+
+
+
+  <div class="hr pb0"></div>
+
+
+  </header>
+
+  
+    <p>A few days ago I was looking into a deadlock issue that is caused by a behavioral difference between MySQL storage engine transaction behavior in repeatable reads. This leads me to dig deeper into repeatable read behavior in InnoDB and what I found is quite interesting:</p>
+
+<h2 id="the-basics">The basics</h2>
+
+<p>Before we dig deeper, let’s revisit some of the basics of database isolation levels. You can refer to my <a href="https://yizhang82.dev/db-isolation-level">earlier post</a> for a more detailed explanation / comparison. Database isolation level defines the behavior of data read/write operations within transactions, and those can have a signficant impact to protecting the data integrity of your application. <em>Repeatable reads</em> guaratees that you would always observe the same value once you read it, and it would never change unless you’ve made the change yourself, giving you the illusion that it is exclusively owned by you and there is no one else. Of course, this isn’t true in practice as there are pessimistic locking and optimistic locking that defines the behavior when write conflict occurs.</p>
+
+<!--more-->
+
+<p>Anyway, let’s look at some concrete examples with InnoDB where the default is repeatable read with pessimistic locking. All the examples below are captured using InnoDB and the discussion are strictly for InnoDB only. For the database engine we care about (MyRocks) I’ll talk about it some other time.</p>
+
+<p>Let’s begin by creating the table and give it some data</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; create table t1 (pk int primary key, count int);
+Query OK, 0 rows affected (0.33 sec)
+
+mysql&gt; insert into t1 values (1, 0);
+</code></pre></div></div>
+
+<p>Start the transaction and observe the value:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION1&gt; begin;
+Query OK, 0 rows affected (0.00 sec)
+
+SESSION1&gt; select * from t1;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     0 |
++----+-------+
+1 row in set (0.00 sec)
+
+</code></pre></div></div>
+
+<p>The value is still 0, not surprising.</p>
+
+<p>Now lets’ change it outside of transaction from another client session:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION2&gt; update t1 set count=2 where pk=1;
+Query OK, 1 row affected (0.08 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+</code></pre></div></div>
+
+<p>And look inside transaction:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION1&gt; select * from t1;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     0 |
++----+-------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>You’ll see that the value is unchanged, as required by repeatable reads.</p>
+
+<p>Now when we update it in SESSION1:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION1&gt; update t1 set count=1 where pk=1;
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+SESSION1&gt; select * from t1;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     1 |
++----+-------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>And the new value becomes 1 and the latest value 2 gets overwriten. Row (1, 1) becomes locked.</p>
+
+<p>So if you try to update it anywhere else:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION2&gt; update t1 set count=count+1 where pk=1;
+(waiting for SESSION1 to commit)
+</code></pre></div></div>
+
+<p>It’ll stuck waiting for SESSION1 to commit.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION1&gt; commit;
+Query OK, 0 rows affected (0.00 sec)
+</code></pre></div></div>
+
+<p>Come back to session2 and notice the update command has finished:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION2&gt; select * from t1;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     2 |
++----+-------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>Note the value has now become 3.</p>
+
+<p>Also, keep in mind that repeatable reads doesn’t necessarily protect you from corrupting the data as read itself doesn’t take any locks. So it is possible for someone else to update the data without you knowing about it, and you may end up ovewriting that new value without accouting for the new value.</p>
+
+<h2 id="countcount1">count=count+1</h2>
+
+<p>Now let’s change the updates to <code class="highlighter-rouge">UPDATE SET count=count+1</code>, the behavior becomes much more interesting.</p>
+
+<p>Again start with SESSION1 (assuming we reset everything back to 0):</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION1&gt; begin;
+Query OK, 0 rows affected (0.00 sec)
+
+SESSION1&gt; select * from t1;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     0 |
++----+-------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>Now update it in another session:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION2: update t1 set count=5 where pk=1;
+Query OK, 1 row affected (0.05 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+</code></pre></div></div>
+
+<p>Come back to SESSION1, and use UPDATE to increment the value:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; update t1 set count=count+1 where pk=1;
+qQuery OK, 1 row affected (23.15 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+</code></pre></div></div>
+
+<p>Now what do you think? What’s the value of count now?</p>
+
+<p>Based on our discussion above, it should be 0 + 1 = 1. However, that’s not what we get here:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; select * from t1;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     6 |
++----+-------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>Clearly it is reading from the latest value instead of the 0 value we read earlier!</p>
+
+<p>It turns out InnoDB actually has two kind of reads: <a href="https://dev.mysql.com/doc/refman/8.0/en/innodb-consistent-read.html">CONSISTENT READ</a> and <a href="https://dev.mysql.com/doc/refman/8.0/en/innodb-locking-reads.html">LOCKING READ</a>. The reads when you do in UPDATE, SELECT FOR UPDATE, SELECT FOR SHARED LOCK are locking reads.</p>
+
+<p>Consistent read when you read without a lock and reads the snapshot established in the transaction, (1, 0) in this case. Locking read would actually read the latest data and act as if this were read-committed.</p>
+
+<p>Strictly speaking, this isn’t quite repeatable read as the view of count clearly was read from outside transaction (as if were read committed) <em>AFTER</em> seeing a earlier value. Technically, you can say there are really two snapshots - the read snapshot for regular reads and the latest snapshot for locking reads, and each snapshot itself follows repeatable reads. However, that is still a departure from regular repeatable reads.</p>
+
+<p>To better illustrate this behavior, let’s look at consistent reads vs locking reads more closely:</p>
+
+<p>Again, let’s start with a new transaction in SESSION1 with everything reset back to 0:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION1&gt; begin;
+Query OK, 0 rows affected (0.00 sec)
+
+SESSION1&gt; select * from t1;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     0 |
++----+-------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>In session2 lets update count to 1:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION2&gt; update t1 set count=count+1 where pk=1;
+Query OK, 1 row affected (0.01 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+</code></pre></div></div>
+
+<p>Come back to SESSION1 and let’s lock t1 for update while observing its latest value:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION1&gt; select * from t1 for update;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     1 |
++----+-------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>You can see with update lock you are seeing the latest value 1.</p>
+
+<p>And if you read without the lock:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION1&gt; select * from t1;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     0 |
++----+-------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>You are back to 0. So you can actually see both values at the same time!</p>
+
+<p>However, only the ‘1’ value is safe because once a update lock is obtained no one can update it anymore so it’s guarateed to be up-to-date.</p>
+
+<p>Now update it using <code class="highlighter-rouge">UPDATE SET count=count+1</code>:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SESSION1&gt; update t1 set count=count+1 where pk=1;
+Query OK, 1 row affected (0.01 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+SESSION1&gt; select * from t1 for update;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     2 |
++----+-------+
+1 row in set (0.00 sec)
+
+SESSION1&gt; select * from t1;
++----+-------+
+| pk | count |
++----+-------+
+|  1 |     2 |
++----+-------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>You can see as we have modified the value in transaction, in all cases you’ll observe the modified value (in write-set) in the transaction.</p>
+
+<h2 id="my-speculation">My speculation</h2>
+
+<p>I haven’t spoke to Oracle about this so the following is just my speculation. Enfocing strict repeatable reads is very nice and correct in theory, but in practice it can be somewhat counter-productive. Imagine this case:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BEGIN;
+SELECT ... from other_table;
+... some other stuff ...
+UPDATE order_count SET count=count+1 where order=some_order;
+COMMIT;
+</code></pre></div></div>
+
+<p>Doing a SELECT estblishes a snapshot for everything - this is needed to avoid inconsistency between the tables even though you may have never read count. This effectively means that your chance of count being out-of-date is now between the SELECT and the UPDATE! However, note that this protection is entirely unnecessary in this case because UPDATE will perform locking read of count when doing count=count+1, effectively protecting update being changed until end of the transaction.</p>
+
+<p>This locking-read behavior can also be useful when you are doing “atomic-compare-exchange” style operations as they can look at the latest value to see if something has changed:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BEGIN;
+SELECT count from count_table into @old_count_value
+UPDATE count_table SET count=count+1 where id=order_id and count=@old_count_value;
+COMMIT;
+</code></pre></div></div>
+
+<p>Even though this feature can be useful, it does introduce additional complexity with InnoDB repeatable reads and may introduce potential data conflict if one were not careful and is not aware of the difference between locking reads and consistent reads. It tries to find a reasonable compromise between strict correctness and practicality. It’s hard to say if it achieved the goal - one may simply never know without careful / extensive instrumentation. I just kinda wish that this isolation level can be called something else, though many database isolation level definition are quite different and you can’t take them at face value anyway,  so that’s a ship already sailed…</p>
+
+  
+</article>
+
+
+<hr class="dingbat related" />
+
+
+
+
+  
+     
+
+
+  <aside class="about related mt4 mb4" role="complementary">
+    
+    
+
+<div class="author mt4">
+  
+
+  
+    
+
+
+  <hy-img
+    
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  
+    
+    root-margin="512px"
+  >
+    <noscript><img data-ignore 
+    src="https://placehold.it/128x128"
+    class="avatar"
+    alt="<firstname> <lastname>"
+    srcset="https://placehold.it/128x128 1x,https://placehold.it/256x256 2x"
+    
+  /></noscript>
+    <span class="loading" slot="loading" hidden>
+      <span class="icon-cog"></span>
+    </span>
+  </hy-img>
+
+
+  
+
+  
+  
+  <h2  class="page-title hr">
+    About
+  </h2>
+
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+
+<p>Open <code class="highlighter-rouge">_data/authors.yml</code> to edit this text.</p>
+
+<p><a href="https://github.com/qwtel/hydejack-starter-kit/archive/v8.1.1.zip">Download Free</a>
+– or –
+<a href="https://app.simplegoods.co/i/NATYVLYT">Buy PRO</a></p>
+
+
+
+  <div class="sidebar-social">
+    <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+  </div>
+</div>
+
+  </aside>
+
+
+  
+
+  
+  
+
+  
+    
+
+
+
+
+<aside class="related mb4" role="complementary">
+  <h2 class="hr">Related Posts</h2>
+
+  <ul class="related-posts">
+    
+      
+
+
+<li>
+  <a href="/mysql-client-connect-error" class="h4 flip-title">
+    <span>Diagnosing interesting MySQL client connection error in localhost through the source code</span>
+  </a>
+  <time class="heading faded fine" datetime="2019-04-18T00:00:00-07:00">18 Apr 2019</time>
+</li>
+
+    
+      
+
+
+<li>
+  <a href="/sorting-structured-data-1" class="h4 flip-title">
+    <span>Sorting structured data in a unstructured way using memcmp-friendly encoding</span>
+  </a>
+  <time class="heading faded fine" datetime="2019-02-17T00:00:00-08:00">17 Feb 2019</time>
+</li>
+
+    
+      
+
+
+<li>
+  <a href="/db-isolation-level" class="h4 flip-title">
+    <span>Summary of database isolation levels</span>
+  </a>
+  <time class="heading faded fine" datetime="2018-04-14T00:00:00-07:00">14 Apr 2018</time>
+</li>
+
+    
+  </ul>
+</aside>
+
+  
+
+
+  
+<aside class="comments related" role="complementary">
+  <h2 class="hr">Comments</h2>
+  
+
+<div id="disqus_thread"></div>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+<script>!function(w, d) {
+  if (d.getElementById("disqus_thread")) {
+    if (w.DISQUS) {
+      w.DISQUS.reset({
+        reload: true,
+        config() {
+          this.page.url = w.location.href;
+          this.page.title = d.title;
+        },
+      });
+    } else {
+      w.disqus_config = function disqusConfig() {
+        this.page.url = w.location.href;
+        this.page.title = d.title;
+      };
+      w.loadJSDeferred(d.getElementById("_hrefDisqus").href + '/embed.js');
+    }
+  }
+}(window, document);</script>
+
+
+</aside>
+
+
+  
+<footer role="contentinfo">
+  <hr/>
+  
+    <p><small class="copyright">© 2017. All rights reserved.
+</small></p>
+  
+  
+  <p><small>Powered by <a class="external" href="https://hydejack.com/">Hydejack</a> v<span id="_version">8.4.0</span></small></p>
+  <hr class="sr-only"/>
+</footer>
+
+
+</main>
+
+    <hy-drawer
+  class=""
+  align="left"
+  threshold="10"
+  touch-events
+  prevent-default
+>
+  <header id="_sidebar" class="sidebar" role="banner">
+    
+    <div class="sidebar-bg sidebar-overlay" style="background-color:#4fb1ba;background-image:url(/assets/img/sidebar-bg.jpg)"></div>
+
+    <div class="sidebar-sticky">
+      <div class="sidebar-about">
+        
+          <a class="no-hover" href="/" tabindex="-1">
+            <img src="/assets/icons/icon.png" class="avatar" alt="yizhang82's blog" data-ignore />
+          </a>
+        
+        <h2 class="h1"><a href="/">yizhang82's blog</a></h2>
+        
+        
+          <p class="">
+            Languages, Runtime, Data structures, Databases, and everything in between
+
+          </p>
+        
+      </div>
+
+      <nav class="sidebar-nav heading" role="navigation">
+        <span class="sr-only">Navigation:</span>
+<ul>
+  
+    
+    
+    
+
+    
+      
+        <li>
+          <a
+            id="_navigation"
+            href="/blog/"
+            class="sidebar-nav-item"
+            
+            >
+            Blog archive
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/dotnet/"
+            class="sidebar-nav-item"
+            
+            >
+            .NET / .NET Core
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/database/"
+            class="sidebar-nav-item"
+            
+            >
+            Database
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/category/interop/"
+            class="sidebar-nav-item"
+            
+            >
+            Interop
+          </a>
+        </li>
+      
+    
+      
+        <li>
+          <a
+            
+            href="/about/"
+            class="sidebar-nav-item"
+            
+            >
+            About me
+          </a>
+        </li>
+      
+    
+  
+</ul>
+
+      </nav>
+
+      
+
+      <div class="sidebar-social">
+        <span class="sr-only">Social:</span>
+<ul>
+  
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://twitter.com/<username>" title="Twitter" class="no-mark-external">
+      <span class="icon-twitter"></span>
+      <span class="sr-only">Twitter</span>
+    </a>
+  </li>
+
+
+    
+      
+
+
+
+  
+
+  
+  
+  
+  
+
+  
+
+  
+
+  <li>
+    <a href="https://github.com/<username>" title="GitHub" class="no-mark-external">
+      <span class="icon-github"></span>
+      <span class="sr-only">GitHub</span>
+    </a>
+  </li>
+
+
+    
+  
+</ul>
+
+      </div>
+    </div>
+  </header>
+</hy-drawer>
+<hr class="sr-only" hidden />
+
+  
+</hy-push-state>
+
+
+  <!--[if !IE]><!---->
+  <script>loadJSDeferred(document.getElementById('_hrefJS').href);</script>
+  
+
+  <!--<![endif]-->
+
+  
+  <script>!function(w, d) {
+    w.ga=w.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+
+    /**/
+      ga('create', 'UA-93224322-1', 'auto');
+    /**/
+
+    var pushStateEl = d.getElementsByTagName('hy-push-state')[0];
+    var timeoutId;
+    pushStateEl.addEventListener('hy-push-state-load', function() {
+      w.clearTimeout(timeoutId);
+      timeoutId = w.setTimeout(function() {
+        ga('set', 'page', w.location.pathname);
+        ga('send', 'pageview');
+      }, 500);
+    });
+
+    d.addEventListener('hy--cookies-ok', function () {
+      w.ga(function(tracker) {
+        w.ga("set", "anonymizeIp", undefined);
+        localStorage && localStorage.setItem("ga--client-id", tracker.get("clientId"));
+      });
+    });
+
+    w.loadJSDeferred('https://www.google-analytics.com/analytics.js');
+  }(window, document);</script>
+
+
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      
+        navigator.serviceWorker.getRegistration()
+          .then(r => r.unregister())
+          .catch(() => {});
+      
+    }
+  </script>
+
+
+
+
+
+
+<h2 class="sr-only" hidden>Templates (for web app):</h2>
+
+<template id="_animation-template" hidden>
+  <div class="animation-main fixed-top">
+    <div class="content">
+      <div class="page"></div>
+    </div>
+  </div>
+</template>
+
+<template id="_loading-template" hidden>
+  <div class="loading nav-btn fr">
+    <span class="sr-only">Loading…</span>
+    <span class="icon-cog"></span>
+  </div>
+</template>
+
+<template id="_error-template" hidden>
+  <div class="page">
+    <h1 class="page-title">Error</h1>
+    
+    
+    <p class="lead">
+      Sorry, an error occurred while loading <a class="this-link" href=""></a>.
+
+    </p>
+  </div>
+</template>
+
+<template id="_back-template" hidden>
+  <a id="_back" class="back nav-btn fl no-hover">
+    <span class="sr-only">Back</span>
+    <span class="icon-arrow-left2"></span>
+  </a>
+</template>
+
+<template id="_permalink-template" hidden>
+  <a href="#" class="permalink">
+    <span class="sr-only">Permalink</span>
+    <span class="icon-link"></span>
+  </a>
+</template>
+
+
+
+
+</body>
+</html>

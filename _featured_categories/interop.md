@@ -3,11 +3,6 @@ layout: list
 title: Interop
 slug: interop
 menu: true
-order: 2
+order: 4
 description: >
-  
-accent_color: '#268bd2'
-accent_image:
-  background: '#202020'
-  overlay:    false
 ---

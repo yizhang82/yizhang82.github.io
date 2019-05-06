@@ -2,6 +2,7 @@
 email:
   name: Email
   icon: icon-mail
+  prepend: 'mailto:'
 amazon:
   name: Amazon
   icon: icon-amazon
@@ -93,7 +94,7 @@ deviantart:
 steam:
   name: Steam
   icon: icon-steam
-  pretend: "http://steamcommunity.com/profiles/"
+  prepend: "http://steamcommunity.com/profiles/"
 dropbox:
   name: Dropbox
   icon: icon-dropbox
