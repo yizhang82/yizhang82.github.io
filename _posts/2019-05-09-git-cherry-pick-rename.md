@@ -7,6 +7,7 @@ comments: true
 excerpt_separator: <!--more-->
 categories:
 - git 
+- tip
 ---
 
 Recently I need to port over some changes using cherry-pick and that usually works fine without any issues (except for occasional conflicts), but this time the actual file `foo.cc` was renamed to `bar.cc`. In such case `git cherry-pick` simply gives up and simply tells you the old file you are changing has been deleted. As far as I can tell there isn't a good way to resolve the conflict.
