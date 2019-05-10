@@ -42,11 +42,11 @@ logo:                  /assets/icons/icon.png
 # This should be the same author as first entry in `_data/authors.yml`.
 # Duplication is necessary due to the `jekyll-feed`, `jekyll-seo-tag` plugin.
 author:
-  name:                Yi Zhang 
-  email:               mail@yizhang82.me 
+  name:                Yi Zhang
+  email:               mail@yizhang82.me
   # Used by `jekyll-seo-tag`:
-  twitter:             yizhang82 
-  github:              yizhang82 
+  twitter:             yizhang82
+  github:              yizhang82
 
 # This text will appear in a `<small>` tag in the footer of every page.
 copyright:             © 2017. All rights reserved.
@@ -121,7 +121,7 @@ disqus:                yizhang82
 
 hydejack:
   # Configure the order of complementary content on blog posts
-  post_addons:         [about, newsletter, related]
+  post_addons:         [about, newsletter, related, random]
 
   # Configure the order of complementary content on project pages
   project_addons:      [about, newsletter, other]
@@ -199,19 +199,19 @@ include:
 # ========================================================================================
 
 plugins:
-  - jekyll-avatar
-  # - jekyll-default-layout
+  - jekyll-default-layout
   - jekyll-feed
-  - jekyll-gist
-  # - jekyll-optional-front-matter
+  - jekyll-optional-front-matter
   - jekyll-paginate
-  # - jekyll-readme-index
-  # - jekyll-redirect-from
+  - jekyll-readme-index
+  - jekyll-redirect-from
   - jekyll-relative-links
-  # - jekyll-remote-theme
   - jekyll-seo-tag
   - jekyll-sitemap
-  # - jekyll-titles-from-headings
+  - jekyll-titles-from-headings
+  - jekyll-avatar
+  - jekyll-gist
+  - jekyll-seo-tag
 
 # Theme
 # ---------------------------------------------------------------------------------------
@@ -243,10 +243,11 @@ plugins:
 
 # Used on index and about sites
 social:
-  name:                Yi Zhang 
+  name:                Yi Zhang
   links:
      - https://twitter.com/yizhang82
      - https://github.com/yizhang82
+
 
 
 # Other Plugins
@@ -257,6 +258,7 @@ optional_front_matter:
 
 readme_index:
   remove_originals:    true
+  with_frontmatter:    true
 
 relative_links:
   collections:         true
@@ -281,8 +283,3 @@ compress_html:
 
 sass:
   style:               compressed
-
-# If you are upgrading form v5 (or earlier), uncomment the lines below,
-# so that the location of the feed XML stays the same.
-# feed:
-#   path:                atom.xml
