@@ -17,4 +17,50 @@ One of the most amazing features in MySQL is to swap the underlying storage engi
 
 ## Building 
 
-## 
+In a typical Ubuntu system, you need to install following dependencies:
+
+```
+sudo apt install libssl-dev libzstd-dev libncurses5-dev libreadline-dev bison pkg-config
+```
+
+## Giving it a spin
+
+## Important Concepts
+
+
+
+## Tour of Source
+
+Here are a list of the most interesting directories:
+
+* `cmake` - cmake files for building MySQL
+* `client` - where the client tooling lives, such as mysql, mysqlbinlog, mysqladmin, etc. 
+* `storage`
+  * `innobase` -
+  * `csv` -
+  * `heap` -
+  * `ndb`
+  * `archive`
+  * `blackhole`
+  * `myisam` - 
+  * `example` - 
+
+* `sql`
+  * `mysqld.cc` - the main entry point
+  * `handler.*`
+  * `item*.*`
+  * `field.*` - MySQL table field class
+  * `key.*` - key comparison utilities
+  * `table.*` - defines `TABLE`/`TABLE_SHARE`/`TABLE_LIST`
+  * `sql_class.*` - defines `THD`
+  * `lex.*`, `sql_lex*.*` 
+  * `sql_yacc.yy` - 
+  *  `sql_parse.*` - the main entry point for executing SQL commands
+  * `sql_show.*` - implements SHOW command
+  * `sql_select.*`, `sql_optimizer.*`, `opt_*.*` - implements SELECT command including query optimization and execution
+  * `structs.h` - important struct definition like `KEY`, `KEY_PART_INFO`, as well as various stats
+  * `set_var.*`, `sys_var.*` - system variables support
+  * `sql_plugin*.*` - MySQL plugin and plugin variable infra 
+* `mysql-test` - all tests live here
+* `vio` - networking (sockets and SSL)
+
