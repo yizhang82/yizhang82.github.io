@@ -127,6 +127,7 @@ set_system_variable(THD *thd, struct sys_var_with_base *tmp,
   var->thd_id= tmp->var->thd_id;
   return lex->var_list.push_back(var);
 }
+```
 
 All `set_var` statements are added to lex->var_list to be executed later.
 
@@ -215,11 +216,28 @@ So it's basically an offset. But if you look closely, there are actually differe
 
 2. For a session variable, the global variable is accessed within `global_system_variables` based on the field offset within the struct, and so are the session variable itself. This is the reason why in this case the global variables also had to be accessed within the global_system_variables struct since the offset needs to be the same.
 
-3. For a "pure" session variable, it is the same as #2 except it won't be ever accessed within `global_system_variables` struct based on the `sys_var::ONLY_SESSION` flag
+3. For a "pure" session variable, it is the same as #2 except it won't be ever accessed within `global_system_variables` struct based on the `sys_var::ONLY_SESSION` flag.
+
+Now let's look at subclass implementation to just get a sense of what it looks like:
+
+```
+class Sys_var_mybool : public Sys_var_typelib {
+  /* ... */
+  bool global_update(THD *thd, set_var *var)
+  {
+    global_var(my_bool)= var->save_result.ulonglong_value;
+    return false;
+  }
+```
+
+The `global_var` is simply a glorified `#define global_var(TYPE) (*(TYPE*)global_var_ptr())`, which if you remember from earlier discussion is simply an pointer to `&global_system_variables+offset` defined by individual variables.
+
+
+> The real update code has logic for `opt_log_global_var_changes` which is an alternative implementation if you want to log the changes. But for the purpose of understanding the system variables infrastructure we can ignore this for now.
 
 ## Initialization and lookup of system variables
 
-Eventually it goes to:
+Let's come back to the magic we skipped over earlier in `find_sys_var`:
 
 ```
 sys_var *intern_find_sys_var(const char *str, uint length)
@@ -373,26 +391,4 @@ error:
   return 1;
 }
 ```
-
-
-
-
-
-
-
-
-
-
-```
-
-class sys_var
-{
-  virtual bool do_check(THD *thd, set_var *var) = 0;
-  virtual void session_save_default(THD *thd, set_var *var) = 0;
-  virtual void global_save_default(THD *thd, set_var *var) = 0;
-  virtual bool session_update(THD *thd, set_var *var) = 0;
-  virtual bool global_update(THD *thd, set_var *var) = 0;
-
-```
-
 
