@@ -15,6 +15,8 @@ categories:
 
 In the [last post](/sorting-structured-data-1) we've discussed converting integers and strings into a memcmp / byte-comparable format for faster comparison (but at the trade off of doing decoding/encoding at reading/writing). In this post let's take a look at how do we do the same for floating pointers.
 
+<!--more-->>
+
 ## IEEE floating point format
 
 [IEEE 754] is the standard for floating points. Taking [float](https://en.wikipedia.org/wiki/Single-precision_floating-point_format) as an example:
