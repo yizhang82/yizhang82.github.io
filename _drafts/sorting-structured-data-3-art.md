@@ -13,5 +13,4 @@ categories:
 - design
 ---
 
-In the last post we've discussed converting
-
+[Adaptive Index Tree](https://db.in.tum.de/~leis/papers/ART.pdf)
