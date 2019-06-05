@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Sorting structured data in a unstructured way using memcmp-friendly encoding"
+title:  "Sorting structured data in a unstructured way using memcmp-friendly encoding Part 1 - sorting integers and strings"
 description: Sorting structured data in a unstructed way using memcmp-friendly encoding part 1
 permalink: sorting-structured-data-1
 comments: true
