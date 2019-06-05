@@ -1,3 +1,15 @@
+---
+layout: post
+title:  "Hacking MySQL #1 - overview of MySQL, and how to build/run test from source"
+description: An overview of MySQL, as well as how to obtain source, build and run tests
+permalink: hacking-mysql-1 
+comments: true
+excerpt_separator: <!--more-->
+categories:
+- mysql 
+- database
+- source 
+---
 
 ## MySQL Overview
 
@@ -17,15 +29,23 @@ One of the most amazing features in MySQL is to swap the underlying storage engi
 
 ## Building 
 
+You can obtain source code from MySQL website, but most folks probably would prefer a github mirror:
+
+```
+git clone https://github.com/mysql/mysql-server
+```
+
+This contains the latest MySQL 8.0.16. 
+
 In a typical Ubuntu system, you need to install following dependencies:
 
 ```
 sudo apt install libssl-dev libzstd-dev libncurses5-dev libreadline-dev bison pkg-config
 ```
 
-Of course, you also need to have a recent-ish cmake.
+> All my instructions below are tested on a Azure Linux Ubuntu 18.04 VM. They may vary slightly due to your configuration/distribution.
 
-Now let's create a bin directory to store all our build files, and start the build:
+Now let's create a `debug` directory to store all our build files, and start the debug build:
 
 ```
 mkdir debug
@@ -34,23 +54,27 @@ cmake .. -DWITH_DEBUG=1 -DDOWNLOAD_BOOST=1 -DWITH_BOOST=~/boost_1_69_0
 make
 ```
 
-1. WITH_DEBUG=1 requests a debug build, which makes debugger easier
-2. DOWNLOAD_BOOST=1 WITH_BOOST=~/boost_1_69_0 downloads the boost at ~/boost_1_69_0 (that's the version MySQL is asking for), and will skip the downloading if it is already there
+1. `WITH_DEBUG=1` requests a debug build, which makes debugger easier
+2. `DOWNLOAD_BOOST=1` `WITH_BOOST=~/boost_1_69_0` downloads the boost at ~/boost_1_69_0 (that's the version MySQL is asking for), and will skip the downloading if it is already there
 
 One the build is done, you can find everything under `debug/bin`.
 
 > Don't change the build directory after the fact once you done the build. The directory name is remembered and changing that naming requires a rebuild.
 
-## Giving it a spin
+## Running a test 
 
-First, let's try running a quick test called `select_all`. To run any test, there is a script `mysql-test-run.pl` located under the mysql-test directory from the build directory, and it takes a test name in the form of `<testname>` or `<testsuite>.<testname>`:
+To validate that we indeed have a working MySQL build, let's try running a quick test called `select_all`. 
+
+To run any test, there is a script `mysql-test-run.pl` located under the mysql-test directory from the build directory, and it takes a test name in the form of `<testname>` or `<testsuite>.<testname>`:
 
 ```
 cd debug/mysql-test
 ./mysql-test-run.pl select_all
 ```
 
-This runs the test under mysql-test/t/select_all.test with baseline mysql-test/r/select_all.result. If the output diverges from the baseline the test would fail, otherwise it would pass.
+This runs the test under `mysql-test/t/select_all.test` with baseline `mysql-test/r/select_all.result`. It runs a simple test language containing test directives/commands and SQL commands, and compare the output with the baseline. If the output diverges from the baseline the test would fail, otherwise it would pass. Simple enough, right? 
+
+> Actually, not quite. The testing of MySQL can get quite complicated when it involves multiple connections / servers communicating with each other. And stablizing the results so that they are not affected by external environment / code changes can be also an headache.
 
 Here is what you should see:
 
@@ -80,9 +104,9 @@ Spent 36.259 of 70 seconds executing testcases
 
 ## Launching and connecting
 
-Running mysql server by itself takes a bit of work.
+Running a test seems straight-forward enough. If you want to launch mysql server and run some SQL commands against it, it takes a bit of work.
 
-First we need to have mysqld initializes a blank database:
+First we need to have mysqld initializes a blank data directory:
 
 ```
 cd debug/bin
@@ -112,7 +136,7 @@ cd debug/bin
 ./mysqld --debug
 ```
 
-This means we start the mysql server in debug mode.
+`--debug` switch means we start the mysql server in debug mode.
 
 Now launch another terminal / TMUX window / whatever, and connect to the mysql server:
 
@@ -171,53 +195,6 @@ I've planned a series articles that will go through many interesting aspects of 
 8. How does replication work 
 9. How does SHOW command work
 
-I'm also planning to write about MyRocks, as well as RocksDB / LevelDB, but I'll priorize MySQL articles first as they lay down a nice foundation for rest of the stuff and people can easily get lost in the vast amount of source code. 
+I'm also planning to write about MyRocks, as well as RocksDB / LevelDB, but I'll priorize MySQL articles first as they lay down a nice foundation for rest of the stuff and this also serves as documentation when people get lost in the vast amount of MySQL source code. 
 
 Let me know what do you think about the article and/or if you are running into issues. Feel free to suggest topics as well.
-
-## Important Concepts
-
-* THD
-* TABLE
-* TABLE_SHARE
-* TABLE_LIST
-* Item
-* Field
-* Handler
-* Handlerton
-
-## Tour of Source
-
-Here are a list of the most interesting directories:
-
-* `cmake` - cmake files for building MySQL
-* `client` - where the client tooling lives, such as mysql, mysqlbinlog, mysqladmin, etc. 
-* `storage`
-  * `innobase` - This is the default storage engine InnoDB supporting transactions and row-level locking. It is the most feature complete.
-  * `csv` - Operates on CSV files and doesn't support index
-  * `heap` - In memory only database supporting quick lookup of non-critical data. Not that interesting anymore.
-  * `ndb`
-  * `archive` - Simple storage engine for archive purposes where everything is compressed. A good next step for understanding storage engines once you looked at example.
-  * `blackhole` - equivalent of /dev/null
-  * `myisam` - Legacy storage engine for MySQL superceded by InnoDB. It only suppports table-level locking so its performance is rather limited in high concurrency situations.
-  * `example` - An example storage engine. First thing you should look at if you want to understand storage engines. It doesn't really do much, though.
-* `sql` - Most of critical MySQL infrastructure code lives here
-  * `mysqld.cc` - the main entry point
-  * `handler.*` - 
-  * `item*.*` - expression AST node items for operators, functions, and literals
-  * `field.*` - MySQL table field class
-  * `key.*` - key comparison utilities
-  * `table.*` - defines `TABLE`/`TABLE_SHARE`/`TABLE_LIST`
-  * `sql_class.*` - defines `THD`
-  * `lex.*`, `sql_lex*.*` - MySQL lexer
-  * `sql_yacc.yy` - MySQL yacc parser
-  *  `sql_parse.*` - the main entry point for executing SQL commands
-  * `sql_show.*` - implements SHOW command
-  * `sql_select.*`, `sql_optimizer.*`, `opt_*.*`, `sql_planner.*` - implements SELECT command including query optimization and execution
-  * `structs.h` - important struct definition like `KEY`, `KEY_PART_INFO`, as well as various stats
-  * `set_var.*`, `sys_var.*` - system variables support
-  * `sql_plugin*.*` - MySQL plugin and plugin variable infra 
-* `mysql-test` - all tests live here
-* `my_sys` - MySQL's OS abstraction layer, 
-* `vio` - networking (sockets and SSL)
-
