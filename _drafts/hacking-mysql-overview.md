@@ -182,9 +182,25 @@ mysql> SELECT @@version;
 1 row in set (0.00 sec)
 ```
 
+Before I leave, let me address a question that is absolutely going to be asked - how do I terminate the server gracefully? CTRL+C doesn't work anymore.
+
+The right way is to use mysqladmin:
+
+```
+cd debug/bin
+./mysqladmin -uroot -p shutdown
+```
+
+You'll see the server waving goodbye:
+
+```
+2019-06-05T05:54:09.028071Z 30 [System] [MY-013172] [Server] Received SHUTDOWN from user root. Shutting down mysqld (Version: 8.0.16-debug).
+2019-06-05T05:54:10.670124Z 0 [System] [MY-010910] [Server] /datadrive/github/mysql-server/debug/runtime_output_directory/mysqld: Shutdown complete (mysqld 8.0.16-debug)  Source distribution
+```
+
 ## What's next
 
-I've planned a series articles that will go through many interesting aspects of MySQL:
+I'm planning a series of articles that will go through many interesting aspects of MySQL:
 
 1. A quick tour of the source code and important concepts in MySQL source
 2. How is the parsing and AST tree generation done for complex statements
