@@ -13,19 +13,30 @@ categories:
 
 ## MySQL Overview
 
-MySQL is one of the most widely used OpenSource relational databases and is used by many companies such as Amazon, Facebook, Google, Alibaba, etc. In my latest job (at time of the writing) we deploy MySQL widely within the Company, we had our MySQL 5.6 [own fork](https://github.com/facebook/mysql-5.6) and moving towards MySQL 8.0 currently in a [branch](https://github.com/facebook/mysql-5.6/tree/fb-mysql-8.0.13). We also have an "new" storage engine built on top of RocksDB, not surprisingly called [MyRocks](http://myrocks.io/), which lives under [storage/rocksdb](https://github.com/facebook/mysql-5.6/tree/fb-mysql-5.6.35/storage/rocksdb) folder in the MySQL 5.6 fork. 
+MySQL is one of the most widely used OpenSource relational databases and is used by many companies such as Amazon, Facebook, Google, Alibaba, etc. In my current job we deploy MySQL widely within the company, we had our MySQL 5.6 [own fork](https://github.com/facebook/mysql-5.6) and moving towards MySQL 8.0 currently in a [branch](https://github.com/facebook/mysql-5.6/tree/fb-mysql-8.0.13). We also have an "new" storage engine built on top of RocksDB, not surprisingly called [MyRocks](http://myrocks.io/), which lives under [storage/rocksdb](https://github.com/facebook/mysql-5.6/tree/fb-mysql-5.6.35/storage/rocksdb) folder in the MySQL 5.6 fork. 
 
 On a 10000-feet view, the architecture of MySQL server looks like this:
 
 1. Connection Management / Authentication
-2. Table Management/Caching
+2. Table/Schema Management/Caching
 3. SQL Parser
 4. SQL Optimizer and Query Executioner
 5. Execution Engine
+6. Replication and logging
 
-One of the most amazing features in MySQL is to swap the underlying storage engine while keeping the same upper layers - this way you can have different in-memory and on-disk representation of databases for different workloads, while keeping the same SQL execution functionality so the client wouldn't even know the underlying storage engine have changed. The default storage engine is InnoDB - a B+ tree based database storage engine, and the one that we have is MyRocks which is built on top of RocksDB, a LSM-tree based database storage engine. There is an API layer called handler that storage engine need to implement/override. You can go to [Comparison of MySQL database engines](https://en.wikipedia.org/wiki/Comparison_of_MySQL_database_engines) to see a list of common storage engines in MySQL but it is actually more of a list rather than a comparison.
+If you dive deeper, an execution engine itself could include following pieces:
 
-> Of course, the statement that they wouldn't know the storage engine has changed is not entirely accurate. There are specific configurations you might need to tune / config the storage engine to your needs, and different storage engine has different performance / behavior, so it's not completely transparent.
+1. Transaction / MVCC / Locking / Snapshot support
+2. Schema/Metadata
+3. In-memory core database data structure (B+ tree / LSM tree / etc) and operation (insert/delete/update) for records
+4. Indexing data structures, and searching/updating
+5. Logging, Checkpointing & Recovery
+6. Database storage persistence
+7. Caching (disk blocks/pages, etc)
+
+One of the most amazing features in MySQL is to swap the underlying storage engine while keeping the same upper layers - this way you can have different in-memory and on-disk representation of databases for different workloads, while keeping the same SQL execution functionality so the client wouldn't even know the underlying storage engine have changed. The default storage engine is InnoDB - a B+ tree based database storage engine, and the one that we have is MyRocks which is built on top of RocksDB, a LSM-tree based database storage engine. There is an API layer called handler that storage engine need to implement/override. You can go to [Comparison of MySQL database engines](https://en.wikipedia.org/wiki/Comparison_of_MySQL_database_engines) to see a list of common storage engines in MySQL.
+
+> Of course, the statement that they wouldn't know the storage engine has changed is not entirely accurate. There are specific configurations you might need to tune / config the storage engine to your needs, and different storage engine has different performance / behavior / features / capabilities, so it's not completely transparent.
 
 ## Building 
 
@@ -43,7 +54,7 @@ In a typical Ubuntu system, you need to install following dependencies:
 sudo apt install libssl-dev libzstd-dev libncurses5-dev libreadline-dev bison pkg-config
 ```
 
-> All my instructions below are tested on a Azure Linux Ubuntu 18.04 VM. They may vary slightly due to your configuration/distribution.
+> All my instructions below are tested on a Azure Linux Ubuntu 18.04 VM and on a MacBook Pro 2018. They may vary slightly due to your configuration/distribution if you are on a unix/linux system. Getting it to work on Windows wasn't too bad either, if I remember correctly.
 
 Now let's create a `debug` directory to store all our build files, and start the debug build:
 
@@ -204,13 +215,15 @@ I'm planning a series of articles that will go through many interesting aspects 
 
 1. A quick tour of the source code and important concepts in MySQL source
 2. How is the parsing and AST tree generation done for complex statements
-3. How are statement being executed in MySQL - we'll show by adding a new simple command
+3. How are statement being executed in MySQL
+4. How to add your own command
 5. How does MySQL optimizer / query execution work
 6. How does plugin / storage engine work
 7. How does system variables work
 8. How does replication work 
 9. How does SHOW command work
+10. How does binlog work
 
-I'm also planning to write about MyRocks, as well as RocksDB / LevelDB, but I'll priorize MySQL articles first as they lay down a nice foundation for rest of the stuff and this also serves as documentation when people get lost in the vast amount of MySQL source code. 
+I'm also planning to write about MyRocks, as well as RocksDB / LevelDB / InnoDB, but I'll priorize MySQL articles first as they lay down a nice foundation for rest of the stuff and this also serves as documentation when people get lost in the vast amount of MySQL source code. 
 
-Let me know what do you think about the article and/or if you are running into issues. Feel free to suggest topics as well.
+Let me know what do you think about the article and/or if you are running into issues. Feel free to suggest topics as well. But I probably can't help much with your DBA questions...
