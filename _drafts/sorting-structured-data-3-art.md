@@ -14,3 +14,4 @@ categories:
 ---
 
 [Adaptive Index Tree](https://db.in.tum.de/~leis/papers/ART.pdf)
+

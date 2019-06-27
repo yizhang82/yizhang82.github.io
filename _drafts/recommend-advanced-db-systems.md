@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "A great database course recommendation"
+title:  "Database course recommendation"
 description: 15-721 Advanced Database Systems is a great database course for those who want to understand how database works
 permalink: recommend-advanced-db-systems-course 
 comments: true
@@ -11,7 +11,14 @@ categories:
 - design
 ---
 
-I just came across this youtube course [15-721 Advanced Database Systems](https://www.youtube.com/playlist?list=PLSE8ODhjZXjYgTIlqf4Dy9KQpQ7kn1Tl0) by Andy Pavlo from CMU. The courses are really well done - clearly articulated / explained and cover a broad range of topics, including a broad survey of different techniques covering implementation of transactions, indexing, concurrency, storage/compression, data structures, query optimization and execution, and finally, Non-Volatile Memory Databases which personally is my favorite database topic.  
+I just came across these youtube video courses:
+1. [15-445/465 Intro to Database Systems](https://www.youtube.com/playlist?list=PLSE8ODhjZXja3hgmuwhf89qboV1kOxMx7)
+  
+
+2. [15-721 Advanced Database Systems](https://www.youtube.com/playlist?list=PLSE8ODhjZXjYgTIlqf4Dy9KQpQ7kn1Tl0)
+
+
+ by Andy Pavlo from CMU. The courses are really well done - clearly articulated / explained and cover a broad range of topics, including a broad survey of different techniques covering implementation of transactions, indexing, concurrency, storage/compression, data structures, query optimization and execution, and finally, Non-Volatile Memory Databases which personally is my favorite database topic.  
 
 However, do keep in mind that the talk focuses primarily in in-memory database systems, which in many ways share similar architecture with on-disk databases but comes with different trade-offs and therefore may end up with different choices in terms of algorithms, data structures and components, but the basic ideas are still the same.
 
