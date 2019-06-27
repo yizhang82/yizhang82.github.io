@@ -2,6 +2,7 @@
 layout: about 
 title: About me
 author: yizhang82
+order: 8
 permalink: /about/
 ---
 
