@@ -19,24 +19,24 @@ I've been debugging an internal tooling that fails to copy over database data to
 
 ```python
 
-dst = filter(lambda i : is_supported_dst(i), dst)
+file_list = filter(lambda i : is_supported(i), file_list)
 
-for i in dst:
+for i in file_list:
     # do some preparation
 
-for i in dst:
+for i in file_list:
     # copy some files
 
-for i in dst:
+for i in file_list:
     # load it into database
 ```
 
-Looking at the log, it indicates only the first loop has been iterated but not the 2nd/3rd. There are no changes to dst in between. 
+Looking at the log, it indicates only the first loop has been iterated but not the 2nd/3rd. There are no changes to `file_list` in between. 
 
 When looking at it under `pdb`, this gives the ultimate clue:
 
 ```
-(Pdb) print(dst)
+(Pdb) print(file_list)
 <filter object at 0x7f02ccc5f828>
 ```
 
@@ -58,10 +58,21 @@ Honestly I'm horrified by this breaking change as it is breaking in both type an
 
 I think whoever made this design change probably has good intentions in mind, as having an iterator can enable lazy evaluation without creating an copy of the entire list, but making this an iterable would be so much better.
 
+> I understand that Python3 is supposed to be a breaking change. However I feel that there are better ways to fix the language while being compatible with previous versions - it'll significantly increase the adoption of the new language and ease the pain of transition. 
+
 The fix is very simple: 
 
 ```python
-dst = list(filter(lambda i : is_supported_dst(i), dst))
+file_list = list(filter(lambda i : is_supported(i), file_list))
 ```
+
+When I talked about this story, Python language experts in the team suggests writing in list comprehensions:
+
+```python
+file_list = [ i for i in file_list if is_supported(i) ]
+```
+
+> I must admit I'm no Python expert because I couldn't get myself to work through the 1000+ Learning Python book and I still couldn't resist writing semicolon at the end of each statement...
+
 
 Now I can't wait to fully transition to using Go for any non-system coding - anything that is not a database, interpreter, compiler, virtual machine, file system driver, or kernel. But hey, people have written [database in go](https://github.com/cockroachdb/cockroach), so you never know.
