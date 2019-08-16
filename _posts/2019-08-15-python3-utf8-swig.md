@@ -13,9 +13,8 @@ categories:
 
 Anyone familiar with Python probably knew its history of Unicode support. If you add Python3, Unicode, and SWIG together, imagine what might go wrong? 
 
-# Python3, Unicode, SWIG, and me
 
-<!--more-->
+# Python3, Unicode, SWIG, and me
 
 I was debugging a test failure written in Python just now and it is failing with this error:
 
