@@ -56,7 +56,7 @@ In a typical Ubuntu system, you need to install following dependencies:
 sudo apt install libssl-dev libzstd-dev libncurses5-dev libreadline-dev bison pkg-config
 ```
 
-> All my instructions below are tested on a Azure Linux Ubuntu 18.04 VM and on a MacBook Pro 2018. They may vary slightly due to your configuration/distribution if you are on a unix/linux system. Getting it to work on Windows wasn't too bad either, if I remember correctly.
+> All my instructions below are tested on a Azure Linux Ubuntu 18.04 VM and on a MacBook Pro 2018. They may vary slightly due to your configuration/distribution if you are on a unix/linux system. Getting it to work on Windows requires installing [OpenSSL binaries](http://slproweb.com/products/Win32OpenSSL.html) and [GNU Bison](http://gnuwin32.sourceforge.net/packages/bison.htm). Fortunately in most cases MySQL is pretty good about telling you exactly what is missing and where to download them.
 
 Now let's create a `debug` directory to store all our build files, and start the debug build:
 
