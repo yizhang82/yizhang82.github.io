@@ -56,7 +56,7 @@ In a typical Ubuntu system, you need to install following dependencies:
 sudo apt install libssl-dev libzstd-dev libncurses5-dev libreadline-dev bison pkg-config
 ```
 
-> All my instructions below are tested on a Azure Linux Ubuntu 18.04 VM and on a MacBook Pro 2018. They may vary slightly due to your configuration/distribution if you are on a unix/linux system. Getting it to work on Windows requires installing [OpenSSL binaries](http://slproweb.com/products/Win32OpenSSL.html) and [GNU Bison](http://gnuwin32.sourceforge.net/packages/bison.htm). Fortunately in most cases MySQL is pretty good about telling you exactly what is missing and where to download them.
+> All my instructions below are tested on a Azure Linux Ubuntu 18.04 VM and on a MacBook Pro 2018. They may vary slightly due to your configuration/distribution if you are on a unix/linux system. Getting it to work on Windows requires installing [OpenSSL binaries](http://slproweb.com/products/Win32OpenSSL.html) and [GNU Bison](http://gnuwin32.sourceforge.net/packages/bison.htm). If you are using latest Visual Studio 2019, you may also need to apply a [fix](https://github.com/boostorg/proto/issues/20) to boost 1.69.0 for a outdated VC workaround (a workaround for a workaround, essentially). Fortunately in most cases MySQL is pretty good about telling you exactly what is missing and where to download them.
 
 Now let's create a `debug` directory to store all our build files, and start the debug build:
 
@@ -126,6 +126,8 @@ cd debug/bin
 ./mysqld --initialize
 ```
 
+> In Windows you'll need to add `--console` to write error output to screen. Otherwise it's only available in the .err log file.
+
 You should see:
 
 ```
@@ -148,6 +150,8 @@ Now we can finally start the server:
 cd debug/bin
 ./mysqld --debug
 ```
+
+> In Windows you'll need to add `--console` to write error output to screen. Otherwise it's only available in the .err log file.
 
 `--debug` switch means we start the mysql server in debug mode.
 
@@ -210,6 +214,12 @@ You'll see the server waving goodbye:
 2019-06-05T05:54:09.028071Z 30 [System] [MY-013172] [Server] Received SHUTDOWN from user root. Shutting down mysqld (Version: 8.0.16-debug).
 2019-06-05T05:54:10.670124Z 0 [System] [MY-010910] [Server] /datadrive/github/mysql-server/debug/runtime_output_directory/mysqld: Shutdown complete (mysqld 8.0.16-debug)  Source distribution
 ```
+
+## Debugging
+
+In Windows/Mac debugging is relatively straightforward and isn't any different from other applications. My personal recommendation is to use Visual Studio Code and setup lldb/gdb debugging there.
+
+For Windows, the obvious choice is Visual Studio (2019 Community Edition is the one I've tested on). However it looks like mysqld is launching another mysqld instance that does the real work, so F5 debugging that mysqld from Visual Studio requires [Child Process Debugging Power Tool](https://marketplace.visualstudio.com/items?itemName=vsdbgplat.MicrosoftChildProcessDebuggingPowerTool) in order for your breakpoints to hit since they need to be set in the child mysqld process, not the parent. Of course attaching to the correct mysqld would always work regardless without the help of the Child Process Debugging Power Tool.
 
 ## What's next
 
