@@ -217,7 +217,7 @@ You'll see the server waving goodbye:
 
 ## Debugging
 
-In Windows/Mac debugging is relatively straightforward and isn't any different from other applications. My personal recommendation is to use Visual Studio Code and setup lldb/gdb debugging there.
+In Linux/Mac debugging is relatively straightforward and isn't any different from other applications. My personal recommendation is to use Visual Studio Code and setup lldb/gdb debugging there.
 
 For Windows, the obvious choice is Visual Studio (2019 Community Edition is the one I've tested on). However it looks like mysqld is launching another mysqld instance that does the real work, so F5 debugging that mysqld from Visual Studio requires [Child Process Debugging Power Tool](https://marketplace.visualstudio.com/items?itemName=vsdbgplat.MicrosoftChildProcessDebuggingPowerTool) in order for your breakpoints to hit since they need to be set in the child mysqld process, not the parent. Of course attaching to the correct mysqld would always work regardless without the help of the Child Process Debugging Power Tool.
 
