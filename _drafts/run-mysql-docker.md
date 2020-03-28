@@ -75,3 +75,5 @@ mysql> select @@version_comment;
 ```
 
 Just keep in mind everything you do in the container is temporary and will be destroyed once the container is gone.
+
+If you want to do fancier thing like using your own my.cnf or mapping database to your localhost file, you can refer to https://hub.docker.com/_/mysql/ for more information.
