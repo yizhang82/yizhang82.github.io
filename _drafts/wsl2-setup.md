@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Setting up WSL 2"
+title:  "My experience in setting up WSL 2"
 description: Tips for setting up WSL 2 environment
 permalink: set-up-wsl2
 comments: true
@@ -9,6 +9,27 @@ categories:
 - wsl
 - linux
 ---
+
+# My experience in setting up WSL 2
+
+## Why not just Linux?
+
+I use a MBP 16 for my daily work and SSH into linux machines for development/testing. I do have a T470p which works very well with Ubuntu. However, I have another laptop X1-carbon gen7 that I like quite a bit has this crazy Dolby surround 4-channel speakers which works quite well under Windows but just performs poorly in linux. After some research I eventually got tired of spending time on it, so I thought I should give WSL 2 a try now that Windows 10 May 2020 is here. 
+
+Setting it up is not too bad - you do need to follow
+
+## Moving it to another disk
+
+## Limiting memory growth
+
+By default WSL 2 is setup to consume up to 80% of system memory which is way too high. In my 16GB laptop I'm setting this to 6GB (8GB is still too high with a few chrome tabs open and VSCode open side by side). Hopefully future versions this limit can be more dynamic depending on system memory consumption. Before that happens, you'll need to write following to `%USERPROFILE%\.wslconfig`.
+
+```
+[wsl2]
+memory=6GB
+swap=0
+localhostForwarding=true
+```
 
 ## Terminal
 
@@ -56,28 +77,4 @@ bind-key -Tcopy-mode-vi 'y' send -X copy-pipe "clip.exe"
 
 I have a script that auto detects Linux/Mac/WSL and use the correct copy tool correctly [in github](https://github.com/yizhang82/dotfiles/blob/master/utils/copy) based on https://github.com/Parth/dotfiles/blob/master/utils/copy.
 
-## Neofetch
-
-```
-
-            .-/+oossssoo+/-.               yizhang82@yzha-carbon
-        `:+ssssssssssssssssss+:`           ---------------------
-      -+ssssssssssssssssssyyssss+-         OS: Ubuntu 20.04 LTS on Windows 10 x86_64
-    .ossssssssssssssssssdMMMNysssso.       Kernel: 4.19.84-microsoft-standard
-   /ssssssssssshdmmNNmmyNMMMMhssssss/      Uptime: 11 hours, 42 mins
-  +ssssssssshmydMMMMMMMNddddyssssssss+     Packages: 862 (dpkg)
- /sssssssshNMMMyhhyyyyhmNMMMNhssssssss/    Shell: zsh 5.8
-.ssssssssdMMMNhsssssssssshNMMMdssssssss.   CPU: Intel i7-10510U (8) @ 2.304GHz
-+sssshhhyNMMNyssssssssssssyNMMMysssssss+   Memory: 170MiB / 7961MiB
-ossyNMMMNyMMhsssssssssssssshmmmhssssssso
-ossyNMMMNyMMhsssssssssssssshmmmhssssssso
-+sssshhhyNMMNyssssssssssssyNMMMysssssss+
-.ssssssssdMMMNhsssssssssshNMMMdssssssss.
- /sssssssshNMMMyhhyyyyhdNMMMNhssssssss/
-  +sssssssssdmydMMMMMMMMddddyssssssss+
-   /ssssssssssshdmNNNNmyNMMMMhssssss/
-    .ossssssssssssssssssdMMMNysssso.
-      -+sssssssssssssssssyyyssss+-
-        `:+ssssssssssssssssss+:`
-            .-/+oossssoo+/-.
-```
+## My overall impression
