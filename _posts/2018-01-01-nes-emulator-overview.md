@@ -12,7 +12,7 @@ categories:
 
 I've recently wrote a [NES](https://en.wikipedia.org/wiki/Nintendo_Entertainment_System) Emulator [NesChan](https://github.com/yizhang82/neschan). I had a lot of fun building this emulator and is planning to write a series of post documenting my experience and maybe help anyone who also want to write one. This is the first post.
 
-![NESChan mac version](/assets/img/neschan_mac.png)
+![NESChan mac version](/_imgs/neschan_mac.png)
 
 Many people growing up in the 80s probably have fond memory of playing 8-bit NES games - those games are surprisingly fun (and many of them challenging). Those 8-bit style games are also making a come back in indie games such as [Shovel Knight](https://en.wikipedia.org/wiki/Shovel_Knight) and [Stardew Valley](http://stardewvalley.net/).
 
