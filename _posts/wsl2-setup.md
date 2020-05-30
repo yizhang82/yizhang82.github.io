@@ -24,6 +24,8 @@ However, to get it work properly requires a bit of extra work. Once you set it u
 
 ![WSL_terminal](/_imgs/wsl2-terminal.png)
 
+<!--more-->
+
 ## Install WSL Remote extension on VSCode
 
 When you launch VS, it'll automatically prompt you to install WSL Remote extension. Once you done installation, just open code from WSL:
