@@ -6,7 +6,7 @@ permalink: innodb-repeatable-read
 comments: true
 excerpt_separator: <!--more-->
 categories:
-- database 
+- database
 - innodb
 - transaction
 - threading
@@ -176,7 +176,7 @@ It turns out InnoDB actually has two kind of reads: [CONSISTENT READ](https://de
 
 Consistent read when you read without a lock and reads the snapshot established in the transaction, (1, 0) in this case. Locking read would actually read the latest data and act as if this were read-committed. 
 
-Strictly speaking, this isn't quite repeatable read as the view of count clearly was read from outside transaction (as if were read committed) *AFTER* seeing a earlier value. Technically, you can say there are really two snapshots - the read snapshot for regular reads and the latest snapshot for locking reads, and each snapshot itself follows repeatable reads. However, that is still a departure from regular repeatable reads.
+Strictly speaking, this isn't quite repeatable read as the view of count clearly was read from outside transaction (as if were read committed) *AFTER* seeing a earlier value. And only non-locking reads are true consistent reads.
 
 To better illustrate this behavior, let's look at consistent reads vs locking reads more closely:
 
