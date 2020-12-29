@@ -1,85 +1,59 @@
 ---
+layout: page
+title: Upgrade
 description: >
   This chapter shows how to upgrade Hydejack to a newer version. The method depends on how you've installed Hydejack.
 hide_description: true
+sitemap: false
 ---
 
-# Upgrade
 This chapter shows how to upgrade Hydejack to a newer version. The method depends on how you've installed Hydejack.
 
-## Table of Contents
-{:.no_toc}
 0. this unordered seed list will be replaced by toc as unordered list
 {:toc}
 
-**NOTE**: Before upgrading to v7+, make sure you've read the [CHANGELOG](../CHANGELOG.md){:.heading.flip-title},
+Before upgrading to v7+, make sure you've read the [CHANGELOG](../CHANGELOG.md){:.heading.flip-title},
 especially the part about the [license change](../CHANGELOG.md#license-change)!
-{:.message}
+{:.note}
 
-## Via Starter Kit
-When using the Starter Kit, upgrading Hydejack is as simple as setting the `remote_theme` key in `config.yml` to the desired version.
-
-```yml
-remote_theme: qwtel/hydejack@v8.4.0
-```
-
-To use the latest version on the `v8` branch on each build, you can use  `qwtel/hydejack@v8`.
-
-
-## Via gem
-Upgrading the gem-based theme is as easy as running
+## Free version
+Upgrading the free version of the theme is as easy as running
 
 ```bash
 bundle update jekyll-theme-hydejack
 ```
 
-## Via zip
-Upgrading via zip is a bit of a dark art, specially if you've made changes to any source files,
-and the prime reason why I suggest using the gem-based version of the theme.
-
-Generally, you'll want to copy these files and folders:
-
-* `_includes/`
-* `_layouts/`
-* `_sass/`
-* `assets/`
-* `Gemfile`
-* `Gemfile.lock`
-
-and merge them with your existing folder. However, you'll also want to check out `_data` and `_config.yml` for any changes
-and read latest entries to the [CHANGELOG](../CHANGELOG.md){:.heading.flip-title}.
-
-**NOTE**: If you've modified any of Hydejack's internal files, your changes will most likely be overwritten
-and you have to apply them again.
-Make sure you've made a backup before overwriting any files.
-{:.message}
-
-
-## Via git
-The latest version sits on the `master` branch of [qwtel/hydejack](https://github.com/qwtel/hydejack).
-To apply them to your repository run
-
-~~~bash
-$ git remote add hydejack git@github.com:qwtel/hydejack.git
-$ git pull hydejack master
-~~~
-
-
 ## PRO Version
-Buyers of the PRO version will find the files necessary for an upgrade in the `upgrade` folder of the downloaded zip archive.
 
-**NOTE**: If you've modified any of Hydejack's internal files, your changes will most likely be overwritten
-and you have to apply them again.
-Make sure you've made a backup before overwriting any files.
-{:.message}
+In v9, the structure of Hydejack PRO sites has changed. If you're looking to upgrade from v8 or earlier, 
+check out [Installation for existing sites](./install.md#existing-sites) instead.
+{:.note}
 
+Buyers of the PRO version will find the files necessary for an upgrade in the `#jekyll-theme-hydejack` folder of the downloaded zip archive.
+To upgrade, simply overwrite the existing theme folder in the root directory of your site with the new one, then run
 
-### PRO via GitHub (advanced)
-If you've followed the steps [here](install.md#pro-via-github-advanced), all you need to upgrade is:
+```bash
+bundle update jekyll-theme-hydejack
+```
 
-~~~bash
-$ bundle update jekyll-theme-hydejack-pro
-~~~
+If you've modified any of Hydejack's files in `#jekyll-theme-hydejack`, your changes will most likely be overwritten
+and you have to apply them again. Make sure you've made a backup before overwriting any files.
+{:.note}
+
+## GitHub Pages
+### GH Pages + Free Version
+When building on GitHub Pages, upgrading Hydejack is as simple as setting the `remote_theme` key in `_config.yml` to the latest version:
+
+```yml
+remote_theme: hydecorp/hydejack@v9.0.5
+```
+
+### GH Pages + PRO Version
+This confiugration is the most difficult to upgrade because we've mashed our content and theme files together. 
+For the most part you have to [follow the steps for the installation](./install.md#gh-pages--pro-version) again. 
+
+Keep in mind that, if you've made changes to any theme files, they will be overwritten! That includes the various `my-*` files that are recommended for customization.
+Make sure you don't override them accidentally (you can use git to restore them).
 
 
 Continue with [Config](config.md){:.heading.flip-title}
