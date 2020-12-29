@@ -52,6 +52,8 @@ menu:
     url:               /blog/nes
   - title:             Database development
     url:               /blog/database
+  - title:             Papers I read
+    url:               /blog/paper
   - title:             Interop everything
     url:               /blog/interop
   - title:             .NET / .NET Core
