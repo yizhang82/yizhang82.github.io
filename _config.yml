@@ -46,13 +46,13 @@ author:
 
 # Add links to the sidebar.
 menu:
-  - title:             Blog
+  - title:             Blog Archive
     url:               /blog
-  - title:             NES
+  - title:             NES emulation
     url:               /blog/nes
-  - title:             Database
+  - title:             Database development
     url:               /blog/database
-  - title:             Interop
+  - title:             Interop everything
     url:               /blog/interop
   - title:             .NET / .NET Core
     url:               /blog/dotnet
