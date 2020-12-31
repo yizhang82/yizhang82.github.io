@@ -31,5 +31,3 @@ Putting the software I need on it is also relatively straight-forward. I have [d
 Overall I'm quite happy with Fedora 33 on X1 Carbon 7th Gen. Linux has certainly came a long way and it's great to see hardware manufacturers collaborating with Linux making the experience just work, so there are still hope. Unfortunately Linux desktop is still fragmented as ever, so maybe the year of linux desktop won't be quite there yet. Maybe we'll all end up with Chrome books and SSH to our dev boxes in the cloud - not quite there yet but not that far away either.
 
 
-
-
