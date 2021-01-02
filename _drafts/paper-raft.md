@@ -59,7 +59,7 @@ Raft divides time into terms marked with monotonically increasing integers. Each
 
 Following diagram shows possible state transitions:
 
-```Figure 4```
+![State transitions](imgs/paper-raft-3.png)
 
 If one wins it becomes leader for the entire term. Otherwise in the case of split vote, the term ends with no leader. There is at most one leader in a given term. Term servces as *Logical Clock* in raft - each server maintains a current term that is monotically increased and exchanged when they communicate, and if stale term is detected server will update to the larger value. Server would reject requests with stale term.
 
@@ -93,7 +93,7 @@ Once client send request to the leader, leader sends AppendEntries RPC to all fo
 
 A raft log entry consists of (term, index, operation). Leader decides when it is safe to apply the log entry to the statement and applying the operation, and such log entry becomes *committed*. **Raft gurantees that committed entries are durable and will eventually replicate to all available state machines.** A log entry is committed once it is replicated to the majority of the servers. All the precending entries are considered committed as well. Once a follower learns the log entry is committed, it applies the entry to its own local state machine in log order. 
 
-```Figure 6```
+![Logs](imgs/paper-raft-1.png)
 
 > This implies the latency will be higher in a raft consensus system as the follower would have to know the log entry being committed, usually on the next AppendEntries RPC request (either real user request or heartbeat).
 
