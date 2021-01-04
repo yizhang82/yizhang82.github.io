@@ -1,7 +1,6 @@
 ---
 layout: post
 title: "Paper Reading: for A Scalable Concurrent malloc(3) Implementation for FreeBSD"
-description: "Paper summary for A Scalable Concurrent malloc(3) Implementation for FreeBSD"
 permalink: paper-jemalloc 
 comments: true
 excerpt_separator: <!--more-->
@@ -70,11 +69,11 @@ The post has an excellent diagram tieing everything together:
 Facebook also added a few improvements:
 * rewrote thread caching with a simple FIFO design
 * more fine grained mutex and dropping mutex during syscalls
-* rewrote dirty page purging
+* rewrote dirty page purging such that dirty page count scales with memory usage
 * a better red-black tree implementation 
 
 ## Allocator matters
 
 It is best to close this with a picture from the earlier blog post which shows how much allocator impacts application throughput. 
 
-![allocator_perf](paper-jemalloc-1.jpg)
+![allocator_perf](/imgs/paper-jemalloc-1.jpg)
