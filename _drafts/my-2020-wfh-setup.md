@@ -1,4 +1,4 @@
-# My 2020 Pandemic WFH setup
+# My 2020 Pandemic Working From Home Setup
 
 ## Desk
 
