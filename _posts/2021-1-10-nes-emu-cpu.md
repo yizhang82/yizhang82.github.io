@@ -11,7 +11,12 @@ categories:
 - nes 
 - emulator
 - assembly
+related_posts:
+- /nes-emu-overview
+- /nes-emu-main-loop
+- /nes-emu-cpu
 ---
+
 # Writing your own NES emulator: Part 3 - emulating the 6502 CPU
 
 It's been a while since the [last update](/nes-emu-main-loop) - I was mostly focusing on database technologies. Beginning of the year 2021 is a bit slow (that's when many big companies start their annual / semi-annual review process), so I had a bit of time to write this up. All the code referenced in this post is in my simple NES emulator github repo [NesChan](https://github.com/yizhang82/neschan). It's fun to go back and look at my old code and the 6502 CPU wiki.
@@ -334,6 +339,12 @@ With that I can run a bunch of ROMs as regression tests, much better:
 ## Conclusion
 
 It took me a few days to implement all CPU and get majority of the CPU tests to pass. Things are a bit more subtle than I expected, but that's probably the case for emulating real world CPU which always has its own quirks or even bugs, and the documentation has bugs too (which are hard to find unless you test with a real CPU or a emulator). There are quite a bit of subtle behavior I didn't cover (such as page crossing, etc) that I need to get exactly right. Getting CPU emulation correct is absolutely critical for getting games working, not surprisingly. One thing that did surprise me is that the last bug that prevented *Super Mario Bros* from working is [bugs in my CPU emulation](https://github.com/yizhang82/neschan/commit/7a397de0e6b6afcd50cc77bd33079ad854722205), including a documentation bug. If I remember correctly I had to debug it with another emulator side by side to find out the exact problem. On retrospective I probably should've get all the CPU tests working properly, and the fact that I had disabled a few (especially the earlier ones from 1-14) is definitely red flag. Unfortunately I was too excited to push ahead and "mostly working" is deemed "good enough", which turned out to be a big mistake. That's why we work on side projects - have fun, and learn something doing it.
+
+## The series so far...
+
+* [Part 1 - NES Emulator Overview](/nes-emu-overview)
+* [Part 2 - Writing the main loop](/nes-emu-main-loop)
+* [Part 3 - Emulating the 6502 CPU](/nes-emu-cpu)
 
 ## If you are hungry for more NES...
 
