@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Writing your own NES emulator - overview"
+title:  "Writing your own NES emulator Part 1 - overview"
 date:   2018-01-1
 description: How to write your own NES emulator - overview
 permalink: nes-emu-overview

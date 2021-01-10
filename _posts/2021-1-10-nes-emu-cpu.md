@@ -17,8 +17,6 @@ related_posts:
 - /nes-emu-cpu
 ---
 
-# Writing your own NES emulator: Part 3 - emulating the 6502 CPU
-
 It's been a while since the [last update](/nes-emu-main-loop) - I was mostly focusing on database technologies. Beginning of the year 2021 is a bit slow (that's when many big companies start their annual / semi-annual review process), so I had a bit of time to write this up. All the code referenced in this post is in my simple NES emulator github repo [NesChan](https://github.com/yizhang82/neschan). It's fun to go back and look at my old code and the 6502 CPU wiki.
 
 ## The 6502 CPU
