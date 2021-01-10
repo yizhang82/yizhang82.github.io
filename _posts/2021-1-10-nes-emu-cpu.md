@@ -18,7 +18,7 @@ It's been a while since the [last update](/nes-emu-main-loop) - I was mostly foc
 
 ## The 6502 CPU
 
-NES uses 8-bit [6502 CPU](https://en.wikipedia.org/wiki/MOS_Technology_6502) with 16-bit address bus, meaning it can access memory range 0x0000~0xffff - not much, but more than enough for games back in the 80s with charming dots and sprites. It is used in a surprising large range of famous vintage computers/consoles like Apple I, Apple II, Atari, Commodore 64, and of course NES. The variant used by NES is a stock 6502 without decimal mode support. It is running at 1.79HMZ (PAL version runs at 1.66MHZ). It has 3 general purpose register A/X/Y, and 3 special register P (status) /SP (stack pointer) /PC (program counter, or instruction pointer), all of them being 8-bit except PC which is 16-bit.
+NES uses 8-bit [6502 CPU](https://en.wikipedia.org/wiki/MOS_Technology_6502) with 16-bit address bus, meaning it can access memory range 0x0000~0xffff - not much, but more than enough for games back in the 80s with charming dots and sprites. It is used in a surprising large range of famous vintage computers/consoles like Apple I, Apple II, Atari, Commodore 64, and of course NES. The variant used by NES is a stock 6502 without decimal mode support. It is running at 1.79HMZ (PAL version runs at 1.66MHZ). It has 3 general purpose register A/X/Y, and 3 special register P (status) /SP (stack pointer) /PC (program counter, or instruction pointer), all of them being 8-bit except PC which is 16-bit. NES dev wiki has a [great section on 6502 CPU](http://wiki.nesdev.com/w/index.php/CPU) that has a lot more details and we'll be covering the most important aspects in the remainder of the article. 
 
 To emulate the CPU, the main loop would look something like this:
 1. We start at a memory location by set current *program counter* (also known as instruction pointer in other architectures) **PC** to that location
@@ -30,6 +30,8 @@ To emulate the CPU, the main loop would look something like this:
 7. Move to the next instruction by going back to 2
 
 The most interesting aspect are instruction decoding, memory access modes, and instruction execution. Let's look at this one by one. 
+
+
 
 <!--more-->
 
@@ -49,7 +51,7 @@ Before executing the instruction, you need to first look up the bytes in memory 
 
 > We'll look at memory access mode later. For now you'll just need to know they indicates where the actual data is coming from, while the instruction itself is the *operation*. Instruction typically supports different memory access modes so that it can operate on different data from different locations using different methods, whether it is register, memory, etc.
 
-In order to build the table, it's useful to visualize it by looking at the following table from [nesdev unofficial opcodes wiki]:
+In order to build the table, it's useful to visualize it by looking at the following table from [nesdev unofficial opcodes wiki](http://wiki.nesdev.com/w/index.php/CPU_unofficial_opcodes):
 
 ![img](/imgs/nes-emu-cpu-1.png)
 
