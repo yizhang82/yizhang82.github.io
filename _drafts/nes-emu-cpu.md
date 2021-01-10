@@ -1,7 +1,8 @@
 ---
 layout: post
-title:  "Writing your own NES emulator - the 6502 CPU"
+title:  "Writing your own NES emulator Part 3 - the 6502 CPU"
 description: Emulating the NES 6502 CPU 
+date:   2021-1-10
 permalink: nes-emu-cpu
 comments: true
 excerpt_separator: <!--more-->
@@ -11,21 +12,17 @@ categories:
 - emulator
 - assembly
 ---
-# Writing your own NES emulator: the CPU
+# Writing your own NES emulator: Part 3 - emulating the 6502 CPU
 
-It's been a while since the [last update](/nes-emu-main-loop) - I was mostly focusing on database technologies. Beginning of the year is a bit slow, so I had a bit of time to write this up.
+It's been a while since the [last update](/nes-emu-main-loop) - I was mostly focusing on database technologies. Beginning of the year 2021 is a bit slow (that's when many big companies start their annual / semi-annual review process), so I had a bit of time to write this up. All the code referenced in this post is in my simple NES emulator github repo [NesChan](https://github.com/yizhang82/neschan). It's fun to go back and look at my old code and the 6502 CPU wiki.
 
 ## The 6502 CPU
 
-Previously we have discussed at a high-level what 6502 CPU + RAM looks like in NES:
-
-* 8-bit 6502 CPU running at 1.79 MHZ. It has 3 general purpose register A/X/Y, and 3 special register P (status) /SP (stack pointer) /PC (program counter, or instruction pointer), all of them being 8-bit except PC which is 16-bit.
-
-* 16-bit addressable memory space. In theory it can address 64K memory however it only has 2KB onboard RAM. Rest is either not wired up (and are mirrors of those 2KB), or mapped to special I/O registers, or catridge ROM/RAM space.
+NES uses 8-bit [6502 CPU](https://en.wikipedia.org/wiki/MOS_Technology_6502) with 16-bit address bus, meaning it can access memory range 0x0000~0xffff - not much, but more than enough for games back in the 80s with charming dots and sprites. It is used in a surprising large range of famous vintage computers/consoles like Apple I, Apple II, Atari, Commodore 64, and of course NES. The variant used by NES is a stock 6502 without decimal mode support. It is running at 1.79HMZ (PAL version runs at 1.66MHZ). It has 3 general purpose register A/X/Y, and 3 special register P (status) /SP (stack pointer) /PC (program counter, or instruction pointer), all of them being 8-bit except PC which is 16-bit.
 
 To emulate the CPU, the main loop would look something like this:
 1. We start at a memory location by set current *program counter* (also known as instruction pointer in other architectures) **PC** to that location
-2. Check if we reached the special end condition (end of instruction, infinite loop, etc), if met, terminate the execution process
+2. Check if we reached the special end condition (end of program, **BRK** instruction, infinite loop, etc...), if met, terminate the execution process
 3. Decode CPU instruction at current **PC**
 4. Set instruction pointer to next instruction
 5. Fetch data as per memory access mode
@@ -33,6 +30,8 @@ To emulate the CPU, the main loop would look something like this:
 7. Move to the next instruction by going back to 2
 
 The most interesting aspect are instruction decoding, memory access modes, and instruction execution. Let's look at this one by one. 
+
+<!--more-->
 
 ## Decoding the instructions
 
@@ -60,7 +59,7 @@ But in order to see the patterns a bit better, let's re-arrange it:
 
 You can see the ALU (green ones, that does math operations) and the RMW (blue ones, = Read Modify Write) instructions follow a very clear pattern, while the red (mostly control instructions) and gray (unofficial / undocumented instructions) are sort of all over the place. 
 
-To keep things simple (and make modification easier, as I was still learning the instructions, and I don't want to do it over when I misunderstood something), in the current implementation I went with a switch case approach with macros. This could be easily updated to use a real table with helper function pointers, though in practice compiler should easily create a jump table and the performance shouldn't be much different, and I doubt performance is going to matter that much when we emulate 6502 with a modern CPU.
+To keep things simple (and make modification easier, as I was still learning the instructions, and I don't want to do it over when I misunderstood something), in the current implementation I went with a switch case approach with macros. This could be easily updated to use a real table with helper function pointers. You might think the jump table approach might be faster, but actually the reality can be a bit more complicated: compiler should easily create a jump table, and jumping into inlined version of the helper functions directly, end up being much faster than a jump table solution. Such optimization are actually more difficult with function pointers (but not impossible). Either way, since I'm not optimizing for a benchmark but to run NES games, I didn't care too much about performance.
 
 For example, for ALU instructions we use this macro:
 
@@ -69,8 +68,6 @@ For example, for ALU instructions we use this macro:
 ```
 
 This defines a `case` statement for a variant of instruction `op`. For example, for ADC, offset 0x9 is ADC with immediate memory access mode. We'll be calling to the `op` helper function for executing the code with the corresponding memory access mode. `NES_TRACE4` is for logging and we can ignore that for now. 
-
-> Again, the switch/case can be easily optimized into a table. I just haven't got a chance to do that yet and I don't see the need for now.
 
 And for each particular ALU instruction, we define 8 variants of all memory access patterns based on the table earlier:
 
@@ -262,7 +259,6 @@ TEST_CASE("CPU tests") {
 
         system.power_on();
 
-        // @TODO - We need an assembler to make testing easier
         system.run_program(
             {
                 0xa9, 0x10,     // LDA #$10     -> A = #$10
@@ -286,7 +282,7 @@ TEST_CASE("CPU tests") {
     }
 ```
 
-But this quickly get tedious. Fortunately, there is a lot of existing test roms. I'm been using [this one](https://github.com/christopherpow/nes-test-roms/tree/master/nes_instr_test) - it is fairly comprehensive. This does mean I need to implement a rudimentary ROM loading first (which we won't cover here), but once that's ready I can just load the ROM and follow the convention of the test ROM - in this case it means checking `peek(0x6000) == 0`.
+But this quickly get tedious. Fortunately, there are a lot of existing test roms. I'm been using [this one](https://github.com/christopherpow/nes-test-roms/tree/master/nes_instr_test) - it is fairly comprehensive. This does mean I need to implement a rudimentary ROM loading first (which we won't cover here), but once that's ready I can just load the ROM and follow the convention of the test ROM - in this case it means checking `peek(0x6000) == 0`.
 
 ```c++
 #define INSTR_V5_TEST_CASE(test) \
@@ -301,7 +297,7 @@ But this quickly get tedious. Fortunately, there is a lot of existing test roms.
     } 
 ```
 
-With that I can run a bunch of ROMs:
+With that I can run a bunch of ROMs as regression tests, much better:
 
 ```c++
     INSTR_V5_TEST_CASE("01-basics")
@@ -328,3 +324,7 @@ With that I can run a bunch of ROMs:
 ## Conclusion
 
 It took me a few days to implement all CPU and get majority of the CPU tests to pass. Things are a bit more subtle than I expected, but that's probably the case for emulating real world CPU which always has its own quirks or even bugs, and the documentation has bugs too (which are hard to find unless you test with a real CPU or a emulator). There are quite a bit of subtle behavior I didn't cover (such as page crossing, etc) that I need to get exactly right. Getting CPU emulation correct is absolutely critical for getting games working, not surprisingly. One thing that did surprise me is that the last bug that prevented *Super Mario Bros* from working is [bugs in my CPU emulation](https://github.com/yizhang82/neschan/commit/7a397de0e6b6afcd50cc77bd33079ad854722205), including a documentation bug. If I remember correctly I had to debug it with another emulator side by side to find out the exact problem. On retrospective I probably should've get all the CPU tests working properly, and the fact that I had disabled a few (especially the earlier ones from 1-14) is definitely red flag. Unfortunately I was too excited to push ahead and "mostly working" is deemed "good enough", which turned out to be a big mistake. That's why we work on side projects - have fun, and learn something doing it.
+
+## If you are hungry for more NES...
+
+Head to [NESDev Wiki](http://wiki.nesdev.com/w/index.php/Nesdev) - I've learned pretty much everything about NES there. There is also a great book on NES called [I am error](https://www.amazon.com/Am-Error-Nintendo-Computer-Entertainment/dp/0262028778), which is surprisingly deeply technical for a book about history of NES.
