@@ -149,4 +149,13 @@ In my next post, I'm going to talk about how a emulator works when it comes up e
 
 You can find my emulator here in github - [neschan](https://github.com/yizhang82/neschan).
 
+## The series so far...
+
+* [Part 1 - NES Emulator Overview](/nes-emu-overview)
+* [Part 2 - Writing the main loop](/nes-emu-main-loop)
+* [Part 3 - Emulating the 6502 CPU](/nes-emu-cpu)
+
+## If you are hungry for more NES...
+
+Head to [NESDev Wiki](http://wiki.nesdev.com/w/index.php/Nesdev) - I've learned pretty much everything about NES there. There is also a great book on NES called [I am error](https://www.amazon.com/Am-Error-Nintendo-Computer-Entertainment/dp/0262028778), which is surprisingly deeply technical for a book about history of NES.
 

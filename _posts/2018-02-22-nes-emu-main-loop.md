@@ -1,8 +1,7 @@
 ---
 layout: post
-title:  "Writing your own NES emulator - writing the main loop"
+title:  "Writing your own NES emulator Part 2 - writing the main loop"
 date:   2018-02-22
-description: Writing your own NES emulator - writing the main loop
 permalink: nes-emu-main-loop
 comments: true
 excerpt_separator: <!--more-->
@@ -143,3 +142,13 @@ Obviously this can be further optimized, but in practice this works reasonably w
 ## What's next
 
 In the next post, I'll be talking about how NES 6502 CPU works, and how to emulate its instructions. It's mostly pretty straight-forward, if not a bit tedious. The addressing mode and memory layout is probably the most interesting part.
+
+## The series so far...
+
+* [Part 1 - NES Emulator Overview](/nes-emu-overview)
+* [Part 2 - Writing the main loop](/nes-emu-main-loop)
+* [Part 3 - Emulating the 6502 CPU](/nes-emu-cpu)
+
+## If you are hungry for more NES...
+
+Head to [NESDev Wiki](http://wiki.nesdev.com/w/index.php/Nesdev) - I've learned pretty much everything about NES there. There is also a great book on NES called [I am error](https://www.amazon.com/Am-Error-Nintendo-Computer-Entertainment/dp/0262028778), which is surprisingly deeply technical for a book about history of NES.

@@ -61,7 +61,7 @@ You can see the ALU (green ones, that does math operations) and the RMW (blue on
 
 To keep things simple (and make modification easier, as I was still learning the instructions, and I don't want to do it over when I misunderstood something), in the current implementation I went with a switch case approach with macros. This could be easily updated to use a real table with helper function pointers. You might think the jump table approach might be faster, but actually the reality can be a bit more complicated: compiler should easily create a jump table, and jumping into inlined version of the helper functions directly, end up being much faster than a jump table solution. Such optimization are actually more difficult with function pointers (but not impossible). Either way, since I'm not optimizing for a benchmark but to run NES games, I didn't care too much about performance.
 
-For example, for ALU instructions we use this macro:
+For example, for ALU instructions we use this macro in [nes_cpu.cpp](https://github.com/yizhang82/neschan/blob/master/lib/src/nes_cpu.cpp):
 
 ```c++
 #define IS_ALU_OP_CODE_(op, offset, mode) case nes_op_code::op##_base + offset : NES_TRACE4(get_op_str(#op, nes_addr_mode::nes_addr_mode_##mode)); op(nes_addr_mode::nes_addr_mode_##mode); break; 
@@ -221,6 +221,8 @@ Dealing with cartridges and mappers are another big topic and a whole lot of com
 
 All these means that whenever you write to a byte you need to do a bit of indirection (just like most of magic in computer science):
 
+[nes_memory.cpp](https://github.com/yizhang82/neschan/blob/master/lib/src/nes_memory.cpp)
+
 ```c++
 void nes_memory::set_byte(uint16_t addr, uint8_t val)
 {
@@ -247,6 +249,8 @@ void nes_memory::set_byte(uint16_t addr, uint8_t val)
 ## Testing
 
 I use [doctest](https://github.com/onqtam/doctest) which is a simple and convenient testing framework that is good enough for my needs. At the beginning I write manual tests - basically execute a bunch of instructions until `BRK` (stop the system) and verify the state of the CPU and RAM:
+
+[cpu_test.cpp](https://github.com/yizhang82/neschan/blob/master/test/cpu_test.cpp)
 
 ```c++
 TEST_CASE("CPU tests") {
