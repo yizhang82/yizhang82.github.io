@@ -66,14 +66,18 @@ To keep things simple (and make modification easier, as I was still learning the
 For example, for ALU instructions we use this macro in [nes_cpu.cpp](https://github.com/yizhang82/neschan/blob/master/lib/src/nes_cpu.cpp):
 
 ```c++
-#define IS_ALU_OP_CODE_(op, offset, mode) case nes_op_code::op##_base + offset : NES_TRACE4(get_op_str(#op, nes_addr_mode::nes_addr_mode_##mode)); op(nes_addr_mode::nes_addr_mode_##mode); break; 
+#define IS_ALU_OP_CODE_(op, offset, mode) \
+    case nes_op_code::op##_base + offset : \
+        NES_TRACE4(get_op_str(#op, nes_addr_mode::nes_addr_mode_##mode)); \
+        op(nes_addr_mode::nes_addr_mode_##mode);  \
+        break;
 ```
 
 This defines a `case` statement for a variant of instruction `op`. For example, for ADC, offset 0x9 is ADC with immediate memory access mode. We'll be calling to the `op` helper function for executing the code with the corresponding memory access mode. `NES_TRACE4` is for logging and we can ignore that for now. 
 
 And for each particular ALU instruction, we define 8 variants of all memory access patterns based on the table earlier:
 
-```
+```c++
 #define IS_ALU_OP_CODE(op) \
     IS_ALU_OP_CODE_(op, 0x9, imm) \
     IS_ALU_OP_CODE_(op, 0x5, zp) \
