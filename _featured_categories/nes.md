@@ -1,6 +1,6 @@
 ---
 layout: list
-title: Writing your own NES Emulator series
+title: NES emulation series 
 slug: nes
 menu: true
 order: 6

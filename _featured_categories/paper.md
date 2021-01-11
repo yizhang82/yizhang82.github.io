@@ -6,8 +6,6 @@ menu: true
 order: 2
 ---
 
-# List of papers that I've read 
-
 Following is a list of papers that I've read and a (not so quick) summary of the contents of them. In the past I've read papers but found I quickly forgot them and had to read it again. So now I'm trying something different.
 
 Using [The Morning Paper](https://blog.acolyer.org/) as an inspiration, I'm taking notes and re-summarize papers I'm reading in my blog, and I believe this will work better for a few reasons:
