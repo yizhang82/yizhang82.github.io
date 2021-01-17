@@ -342,6 +342,7 @@ plugins:
   - jekyll-avatar
   - jekyll-gist
   - jekyll-last-modified-at
+  - jekyll/tagging
 
 
 # SEO Tag

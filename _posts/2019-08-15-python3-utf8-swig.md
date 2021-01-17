@@ -14,7 +14,7 @@ categories:
 Anyone familiar with Python probably knew its history of Unicode support. If you add Python3, Unicode, and SWIG together, imagine what might go wrong? 
 
 
-# Python3, Unicode, SWIG, and me
+## Python3, Unicode, SWIG, and me
 
 I was debugging a test failure written in Python just now and it is failing with this error:
 
@@ -65,7 +65,7 @@ And you get:
 UnicodeEncodeError: 'latin-1' codec can't encode character '\udcfa' in position 0: ordinal not in range(256)
 ```
 
-# The fix
+## The fix
 
 To fix the problem, you can encode the buffer again with surrogateescape:
 
