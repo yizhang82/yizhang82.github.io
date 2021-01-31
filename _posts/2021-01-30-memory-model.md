@@ -1,10 +1,22 @@
-# std::atomic vs volatile in x86
+---
+layout: post
+title: "std::atomic vs volatile, disassembled"
+permalink: atomic-vs-volatile-x86 
+comments: true
+excerpt_separator: <!--more-->
+categories:
+- threading
+- os 
+- assembly
+---
 
-This came up during a code review and the code was using `volatile` to ensure the access to the variable is atomic and serialized, and we were sort of debating whether it is sufficient, in particular:
+This came up during a code review and the code was using `volatile` to ensure the access to the pointer variable is atomic and serialized, and we were sort of debating whether it is sufficient, in particular:
 1. Is it safer to switch to `std::atomic<T>`, and if so, why?
-2. Is volatile sufficiently safe for a strong memory model CPU like x86
+2. Is volatile sufficiently safe for a strong memory model CPU like x86?
 
 Most of us can probably agree that `std::atomic<T>` would be safer, but we need to dig a bit deeper to see why is it safer, and even for x86.
+
+<!--more-->
 
 ## What is the difference?
 
@@ -14,13 +26,21 @@ Most of us can probably agree that `std::atomic<T>` would be safer, but we need 
 
 ## Is std::atomic still required if you have volatile?
 
-To answer this question we need to understand the concept of memory model. `volatile` only prevents compiler optimizations but CPU might still reorder operations and/or cache the writes, so the end result is hardware dependent. Memory model is how hardware models memory access and what kind of ordering and visibility guarantee it provides. CPUs are typically either strong memory model (x86, etc) or weak memory model (ARM, etc). [This blog](https://preshing.com/20120930/weak-vs-strong-memory-models/) has one of the best description of weak memory model vs strong memory model. In particular, x86 CPU falls in the strong memory model category, which means *usually* load implies **acquire** semantics and load implies **release** semantics, but there is no guarantee with `#StoreLoad` ordering, as [observed in this example](https://preshing.com/20120515/memory-reordering-caught-in-the-act/). To better understand acquire/release semantics, you can refer to [this post](https://preshing.com/20120913/acquire-and-release-semantics/). So if you want your code to be correct and portable, and even in x86, the short answer is it's best to not take any chances and use `std::atomic`. It's better to be correct than *fast and wrong*. 
+To answer this question we need to understand the concept of memory model. If all access to memory were seqential in nature and exactly done as written in code, we wouldn't be having this discussion. However, in practice, reordering can happen in two levels:
+* compiler - compiler can reorder / delay / cache variables in registers
+* hardware - CPU can reorder read/write as long as the end result *should be* the same
+
+`volatile` only prevents compiler optimizations but CPU might still reorder operations and/or cache the reads/writes, so the end result is still hardware dependent. 
+
+Memory model is how hardware models memory access and what kind of ordering and visibility guarantee it provides. CPUs are typically either strong memory model (x86, etc) or weak memory model (ARM, etc). [This blog](https://preshing.com/20120930/weak-vs-strong-memory-models/) has one of the best description of weak memory model vs strong memory model. In particular, x86 CPU falls in the strong memory model category, which means *usually* load implies **acquire** semantics and load implies **release** semantics, but there is no ordering guarantee with `#StoreLoad` ordering, as [observed in this example](https://preshing.com/20120515/memory-reordering-caught-in-the-act/). To better understand acquire/release semantics, you can refer to [this post](https://preshing.com/20120913/acquire-and-release-semantics/).
+
+So in short if you want your code to be correct and portable, and even in x86, the short answer is it's best to not take any chances and use `std::atomic`. It's better to be correct than *fast and wrong*. 
 
 ## std::atomic under the hood for x86 
 
 But you might wonder - what does `std::atomic<T>` do for x86 anyway? What is the magic?
 
-It's easy to look into this by writing code using `std::atomic<T>` and disassemble it:
+It'd be easier to look into this by writing code using `std::atomic<T>` and looking at the disassembly code.
 
 Suppose we have following code:
 
@@ -72,7 +92,6 @@ And the output of main looks as follows:
   40107d:       31 c0                   xor    %eax,%eax
   40107f:       48 83 c4 08             add    $0x8,%rsp
   401083:       c3                      retq
-
 ```
 
 For the first `store(2, std::memory_order_seq_cst)` (the default) in x86, gcc made it a full barrier using xchg instruction which has a [implicit lock prefix](https://stackoverflow.com/questions/9027590/do-we-need-mfence-when-using-xchg):
@@ -83,9 +102,9 @@ For the first `store(2, std::memory_order_seq_cst)` (the default) in x86, gcc ma
 
 Here the source is `%eax` = 2, the target of the move is address `rip` (=next instruction 0x40104f) + 0x2fd9 offset = 0x404028, which is the location of the global variable `x`.
 
-If you are wondering what is the behavior of `operator =` - it is the equivalent of `store(std::memory_order_seq_cst)` 
+If you are wondering what is the behavior of `std::atomic<T>::operator =` - it is the equivalent of `store(std::memory_order_seq_cst)` 
 
-> In some compilers you may get `mfence` which is *the* full barrier instruction in x86 CPU
+> In some compilers you may get `mfence` which is *the* full barrier instruction in x86 CPU, so the end result is the same.
 
 Now to the second `store(3, std::memory_order_release)`. Recall under x86 all store has release semantics, so the code is just normal mov:
 
@@ -179,4 +198,4 @@ Again, compiler is free to optimize the load because no one else is going to cha
 
 ## Conclusion
 
-Multi-threading, memory-model, barriers are complicated topics but hopefully this gives you a good starting point. Even seemingly question like what is the difference of `volatile` and `atomic` can be quite confusing. If you are still hungry for more, there is [Linux Kernel Memory Barrier Doc](https://www.kernel.org/doc/Documentation/memory-barriers.txt) that has great details and every programmer does lock-free multi-thread programming or want to understand the details probably should read. 
+Multi-threading, memory-model, barriers are complicated topics but hopefully this gives you a good starting point. Even seemingly question like what is the difference of `volatile` and `atomic` can be quite confusing, and the fact that different compilers does different things for volatile made this more confusing (VC++ for example offers stronger gaurantee for volatile making it a full barrier). If you are still hungry for more, there is [Linux Kernel Memory Barrier Doc](https://www.kernel.org/doc/Documentation/memory-barriers.txt) that has great details and every programmer does lock-free multi-thread programming or want to understand the details probably should read. At the end of the day, having good understanding of compilers, assembly code and computer/CPU architecture would go a long way for system programmers.
