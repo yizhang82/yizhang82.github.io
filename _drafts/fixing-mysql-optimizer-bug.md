@@ -386,7 +386,74 @@ In our case, the most relevant piece of code is this one:
         cur_key2->release_next_key_part();  // Free not used tree
 ```
 
-`key_or` walks through the two ranges, start with A = 1, and see that both keys are identical (B = 2 and C > 1), so decided to merge them and only use the first range. So far so good.
+`key_or` walks through the two ranges, start with A = 1, it seems with is_same check that cur_key1 and cur_key2 being A = 1, so it procees to check both keys are identical (A = 1 and B = 2 and C > 1), so decided to merge them and only use the first range. So far so good.
+
+However, once we keep going we'll reach this line:
+
+```
+        cur_key1->set_next_key_part(key_or(
+            param, cur_key1->release_next_key_part(), key2_cpy.next_key_part));
+```
+
+Recall cur_key2 (key2_cpy is a copy of it) has already released (B = 2 and C > 1), so this effectively becomes key_or((B = 2 and C > 1), NULL), and the outcome is NULL - we lost (B = 2 and C > 1) completely. This means the merged expression become (A = 1). This is the bug.
+
+## Thinking about the fix
+
+So is the bug in key_or((B = 2 AND C > 1), NULL)?
+
+This is a slightly tricky question because it depends how we think about NULL - is NULL equals TRUE or FALSE?
+
+One might be tempted to think NULL equals FALSE in this case, so NULL OR (B = 2 AND C > 1) becomes (B = 2 AND C > 1). It's easy to see this seems to be the most intuitive answer, and not surprisingly I also made the same mistake myself for my first attempt. But this is unfortunately incorrect.
+
+Think about the intention of the key_or function and the data structure - each key is concated by AND, and eventually they get OR-ed together. The goal is to merge two sub tree expression, and each sub tree expression is a series of expression AND together, effectively a link list, ending with NULL. So A = 1 can be seen as A = 1 AND NULL, so NULL is equivalent to TRUE. Think about it in a different way - suppose we have (A = 1), and (A = 1 AND B > 1), you see both A = 1 and then proceed to merge (NULL, B > 1), and in this case it is not hard to see NULL is effective a always TRUE condition and the result should be NULL, and (A = 1 AND NULL) is (A = 1), everything checks out.
+
+So what is the bug then?
+
+From the conclusion above, we can see that once we release the cur_key2->next_key_part, cur_key2 becomes A = 1 AND NULL, and this effectively rendered cur_key2 useless and incorrect, so we shouldn't keep going and attempt to merge the remainder of the keys. Instead, we should just proceed to the next range:
+
+```c++
+    if (eq_tree(cur_key1->next_key_part, cur_key2->next_key_part)) {
+      // Merge overlapping ranges with equal next_key_part
+      if (cur_key1->is_same(cur_key2)) {
+        /*
+          cur_key1 covers exactly the same range as cur_key2
+          Use the relevant range in key1.
+        */
+        cur_key1->merge_flags(cur_key2);    // Copy maybe flags
+        cur_key2->release_next_key_part();  // Free not used tree
+
+        /* FIX: Move on to next range in key2 */
+        cur_key2 = cur_key2->next;
+        continue;
+```
+
+The changes is commented with `/* FIX */`, a two liner.
+
+After the fix we can easily verify:
+
+```
+mysql> explain select * from test_or where (a = 1 and b = 2 and c > 1) OR (a = 1 and b = 2 and c > 1) OR
+(a > 3);
++----+-------------+---------+------------+-------+---------------+---------+---------+------+------+----------+-------------+
+| id | select_type | table   | partitions | type  | possible_keys | key     | key_len | ref  | rows | filtered | Extra       |
++----+-------------+---------+------------+-------+---------------+---------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | test_or | NULL       | range | PRIMARY       | PRIMARY | 24      | NULL |    2 |   100.00 | Using where |
++----+-------------+---------+------------+-------+---------------+---------+---------+------+------+----------+-------------+
+1 row in set, 1 warning (0.02 sec)
+
+mysql> select * from test_or where (a = 1 and b = 2 and c > 1) OR (a = 1 and b = 2 and c > 1) OR (a > 3);
+Empty set (0.01 sec)
+
+```
+
+The bug has been reported to Oracle as [MySQL Bug 102634](https://bugs.mysql.com/bug.php?id=102634).
+
+## That's it
+
+If you want to know more about the data structures used in MySQL optimizer range tree you can look at the comments in opt_range.cc above SEL_ARG, coming with fun ASCII arts.
+
+I'm planning to write more of these kind of real issues as I ran into them. Let me know if you want to see more of these kind of MySQL troubleshooting and dive into MySQL internals.
+
 
 
 
