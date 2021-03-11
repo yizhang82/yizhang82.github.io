@@ -32,13 +32,13 @@ Nowadays I use vim or VS Code / Atom for writing code, and gdb for debugging.
 
 Being an reasonably experienced WinDbg user, Gdb's command line taking a bit getting used to, but that's about it. GDB also supports a TUI mode that shows the integrated text window for source/register/etc and a command window. It's not great as many simple key bindings stop working in that mode (taken over by the TUI component) but as long as I can see a source code "window" over SSH I'm happy.
 
-# TMUX is awesome
+## TMUX is awesome
 
 TMUX is a terminal multiplexer. With TMUX you won't lose your working state - even if you disconnect from SSH, just 'tmux attach' you'll resume where you left off. In this sense it is equivalent to a Windows Remote Desktop session. 
 
 The most powerful part is that it also allow you to break the terminal into multiple panes and windows, and this way you don't have to leave the terminal and can easily switch between many different tasks with quick shortcuts. No more need to manage windows - everything is within the terminal. It's like a virtual desktop for terminals. It's build in the way that you barely had to touch the mouse anymore. Well, until you move to the browser, that is. 
 
-# VIM ftw
+## VIM ftw
 
 In my Microsoft job I use vim for simple editing purposes, and I like the vim way of thinking so much that I put all my editors into vim mode / vim plugin / vim key bindings.  These days I found myself spending even more time in vim over SSH and so I invested more time finding better VIM configurations and plugins. 
 
@@ -82,7 +82,7 @@ For now I'm using ZSH with [oh-my-zsh](https://github.com/robbyrussell/oh-my-zsh
 
 With all these, and throw in a few custom key bindings, the plain shell / windows command prompt just seems so boring.
 
-# You need to work on your configurations
+## You need to work on your configurations
 
 However, tweaking these tools so that they work for you takes time. I find myself spending quite a bit of time tweaking the configurations to make it work better for me - and the time spent paid off. All the different configuration options are indeed quite overwhelming if starting from scratch so I use [Awesome dotfiles](https://github.com/Parth/dotfiles) project as my starting point for tweaking and forked my own version [yizhang82/dotfiles](https://github.com/yizhang82/dotfiles). There are a lot of things that I like about the way the things are setup:
   * One script to deploy everything - TMUX/ZSH, the entire github repo containing dotfiles, and back them up
